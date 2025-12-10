@@ -64,8 +64,6 @@
 
 ## 🧭 Architecture Diagram
 
-Paste the following Mermaid diagram into your README (GitHub renders Mermaid):
-
 ```mermaid
 flowchart LR
   subgraph Network
