@@ -19,7 +19,7 @@ slug: string
 // The number of quotes by this author
 quoteCount: string
 */
-data class QuoteDTO(
+data class QuoteAPIResponse(
     @SerializedName("_id")
     val id: String,
 

@@ -1,10 +1,10 @@
-package com.example.quotify.core.network.model
+package com.example.quotify.core.domain.model
 
-data class QuotesResponseDto(
+data class QuotesList(
     val count: Int,
     val totalCount: Int,
     val page: Int,
     val totalPages: Int,
     val lastItemIndex: Int,
-    val results: List<QuoteDTO>
+    val results: List<Quote>
 )

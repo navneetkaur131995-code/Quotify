@@ -2,7 +2,9 @@ package com.example.quotify.core.domain.model
 
 data class Quote(
     val id: String,
-    val text: String,
-    val authorName: String,
+    val content: String,
+    val author: String,
+    val authorSlug: String,
+    val length: Int,
     val tags: List<String>
 )
