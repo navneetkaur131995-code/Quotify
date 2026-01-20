@@ -60,6 +60,8 @@ dependencies {
     kapt(libs.android.hilt.compiler)
     implementation(libs.kotlin.coroutines)
     implementation(libs.squareup.retrofit)
+    implementation(platform(libs.squareup.okhttp.bom))
+    implementation(libs.okhttp.logging.interceptor)
     implementation(libs.retrofit.gson.converter)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

@@ -1,0 +1,59 @@
+package com.example.quotify.core.di
+
+import com.example.quotify.core.network.APIService
+import com.example.quotify.core.network.BASE_URL
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import javax.inject.Singleton
+
+/* Diff between retrofit and okhttp3
+* Retrofit : Helps to talk to APIs using okHttp3 internally but hides ugly details (okhttp working which is very ugly or complicated inside
+* OkHttp: It is what that actually sends or receives data from the server (Like a truck actually carrying material between producer & consumer)
+*
+* Retrofit can actually work here without us setting okHttp but we lose control:
+* Why do we need to setup our custom OkHttpClient?
+* - Interceptors (Very important): Interceptors let you :
+*             a. Add auth headers
+*             b. Log requests
+*             c. Handle errors globally
+*             d. Refresh tokens
+* - Logging: bcz debugging APIs is very painful process.
+* - Timeout & Retries
+* - Caching
+* */
+
+@Module
+@InstallIn(SingletonComponent::class) // This tells that where does this component live?
+class NetworkModule {
+
+    @Provides
+    @Singleton  // This tells how many instances exist of this class exists?
+    fun providesRetrofit(okHttpClient: OkHttpClient): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun providesOkHttpClient(): OkHttpClient {
+        return OkHttpClient.Builder()
+            .addInterceptor(HttpLoggingInterceptor().apply {
+                level = HttpLoggingInterceptor.Level.BODY
+            }).build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideAPIService(retrofit: Retrofit): APIService {
+        return retrofit.create(APIService::class.java)
+    }
+}

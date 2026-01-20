@@ -1,8 +1,6 @@
-package com.example.quotify.core.database.di
+package com.example.quotify.core.di
 
-import dagger.Binds
 import dagger.Module
-import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 
