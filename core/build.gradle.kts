@@ -1,25 +1,21 @@
 plugins {
-    alias(libs.plugins.android.application)
+    alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.ksp)
     alias(libs.plugins.hilt.android)
 }
 
 android {
-    namespace = "com.example.quotify"
+    namespace = "com.example.quotify.core"
     compileSdk {
         version = release(36)
     }
 
     defaultConfig {
-        applicationId = "com.example.quotify"
         minSdk = 29
-        targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles("consumer-rules.pro")
     }
 
     buildTypes {
@@ -38,42 +34,33 @@ android {
     kotlinOptions {
         jvmTarget = "11"
     }
-    buildFeatures {
-        compose = true
-    }
 }
 
 dependencies {
-    implementation(project(":feature"))
-    implementation(project(":core"))
     // Android Lifecycle
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.activity.compose)
     implementation(libs.material)
 
     // Kotlin Coroutines
     implementation(libs.kotlin.coroutines)
 
-    // Jetpack compose
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.compose.ui)
-    implementation(libs.androidx.compose.ui.graphics)
-    implementation(libs.androidx.compose.ui.tooling.preview)
-    implementation(libs.androidx.compose.material3)
+    // Retrofit + OKHttp
+    implementation(libs.squareup.retrofit)
+    implementation(platform(libs.squareup.okhttp.bom))
+    implementation(libs.okhttp.logging.interceptor)
+    implementation(libs.retrofit.gson.converter)
+
+    // Room
+    implementation(libs.room.runtime)
+    ksp(libs.room.compiler)
+    testImplementation(libs.room.testing)
 
     // Hilt
     implementation(libs.android.hilt)
     ksp(libs.android.hilt.compiler)
     ksp(libs.androidx.hilt.compiler)
-    implementation(libs.androidx.hilt.navigation)
 
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
-    debugImplementation(libs.androidx.compose.ui.tooling)
-    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
