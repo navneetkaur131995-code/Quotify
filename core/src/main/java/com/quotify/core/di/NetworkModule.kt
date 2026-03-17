@@ -10,7 +10,11 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.security.cert.X509Certificate
 import javax.inject.Singleton
+import javax.net.ssl.SSLContext
+import javax.net.ssl.TrustManager
+import javax.net.ssl.X509TrustManager
 
 /* Diff between retrofit and okhttp3
 * Retrofit : Helps to talk to APIs using okHttp3 internally but hides ugly details (okhttp working which is very ugly or complicated inside
@@ -45,10 +49,29 @@ class NetworkModule {
     @Provides
     @Singleton
     fun providesOkHttpClient(): OkHttpClient {
+        // In NetworkModule.kt
+        // This is a "Trust All" manager - ONLY for debugging!
+        val trustAllCerts = arrayOf<TrustManager>(object :
+            X509TrustManager {
+            override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {}
+            override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {}
+            override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
+        })
+
+        val sslContext = SSLContext.getInstance("SSL")
+        sslContext.init(null, trustAllCerts, java.security.SecureRandom())
+
         return OkHttpClient.Builder()
+            .sslSocketFactory(sslContext.socketFactory, trustAllCerts[0] as X509TrustManager)
+            .hostnameVerifier { _, _ -> true } // Ignore hostname mismatches
             .addInterceptor(HttpLoggingInterceptor().apply {
                 level = HttpLoggingInterceptor.Level.BODY
-            }).build()
+            })
+            .build()
+        //        return OkHttpClient.Builder()
+//            .addInterceptor(HttpLoggingInterceptor().apply {
+//                level = HttpLoggingInterceptor.Level.BODY
+//            }).build()
     }
 
     @Provides
