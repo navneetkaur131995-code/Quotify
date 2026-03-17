@@ -13,7 +13,6 @@ fun QuotesListAPIResponse.toDomain(): QuotesList {
         totalPages = totalPages,
         lastItemIndex = lastItemIndex,
         results = results.map { it.toDomain() }
-
     )
 }
 
