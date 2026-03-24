@@ -21,3 +21,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "Quotify"
 include(":app")
+include(":core")
+include(":feature")

@@ -1,7 +1,6 @@
 # Quotify
 
 > A small, production-oriented Android app demonstrating **Clean Architecture**, **Modularization**, **Jetpack Compose**, and **offline-first** patterns.  
-> Ideal portfolio piece for mid → senior Android developer interviews.
 
 [![Kotlin](https://img.shields.io/badge/Kotlin-7f52ff?style=flat&logo=kotlin&logoColor=white)]()
 [![Compose](https://img.shields.io/badge/Jetpack%20Compose-000000?style=flat&logo=jetpackcompose&logoColor=white)]()

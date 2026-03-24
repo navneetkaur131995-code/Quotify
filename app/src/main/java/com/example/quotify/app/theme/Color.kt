@@ -1,4 +1,4 @@
-package com.example.quotify.ui.theme
+package com.example.quotify.app.theme
 
 import androidx.compose.ui.graphics.Color
 
