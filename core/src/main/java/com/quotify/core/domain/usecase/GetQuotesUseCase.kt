@@ -7,12 +7,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
-data class HomeUiState(
-    val isLoading: Boolean = false,
-    val success: List<Quote> = emptyList(),
-    val error: String? = null
-)
-
 class GetQuotesUseCase @Inject constructor(
     private val quoteRepository: QuoteRepository
 ) {
