@@ -7,11 +7,6 @@ import com.quotify.core.domain.model.QuotesList
 
 fun QuotesListAPIResponse.toDomain(): QuotesList {
     return QuotesList(
-        count = count,
-        totalCount = totalCount,
-        page = page,
-        totalPages = totalPages,
-        lastItemIndex = lastItemIndex,
         results = results.map { it.toDomain() }
     )
 }
@@ -20,9 +15,6 @@ fun QuoteAPIResponse.toDomain(): Quote {
     return Quote(
         id = id,
         content = content,
-        author = author,
-        authorSlug = authorSlug,
-        length = length,
-        tags = tags
+        author = author
     )
 }

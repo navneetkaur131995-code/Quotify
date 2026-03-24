@@ -16,28 +16,12 @@ import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
 
-/* Diff between retrofit and okhttp3
-* Retrofit : Helps to talk to APIs using okHttp3 internally but hides ugly details (okhttp working which is very ugly or complicated inside
-* OkHttp: It is what that actually sends or receives data from the server (Like a truck actually carrying material between producer & consumer)
-*
-* Retrofit can actually work here without us setting okHttp but we lose control:
-* Why do we need to setup our custom OkHttpClient?
-* - Interceptors (Very important): Interceptors let you :
-*             a. Add auth headers
-*             b. Log requests
-*             c. Handle errors globally
-*             d. Refresh tokens
-* - Logging: bcz debugging APIs is very painful process.
-* - Timeout & Retries
-* - Caching
-* */
-
 @Module
-@InstallIn(SingletonComponent::class) // This tells that where does this component live?
+@InstallIn(SingletonComponent::class)
 class NetworkModule {
 
     @Provides
-    @Singleton  // This tells how many instances exist of this class exists?
+    @Singleton
     fun providesRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
             .baseUrl(BASE_URL)
