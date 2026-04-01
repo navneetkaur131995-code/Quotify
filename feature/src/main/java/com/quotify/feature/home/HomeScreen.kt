@@ -1,7 +1,9 @@
 package com.quotify.feature.home
 
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -10,7 +12,12 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
+import androidx.compose.material3.pulltorefresh.PullToRefreshState
+import androidx.compose.material3.pulltorefresh.pullToRefresh
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -22,49 +29,50 @@ import androidx.paging.compose.collectAsLazyPagingItems
 fun HomeScreen(paddingValues: PaddingValues, viewModel: HomeViewModel = hiltViewModel()) {
 
     val lazyPagingItems = viewModel.pagingDataFlow.collectAsLazyPagingItems()
+    val isRefreshing = lazyPagingItems.loadState.refresh is LoadState.Loading
 
-    Column(modifier = Modifier.padding(paddingValues)) {
-        // The `CombinedLoadStates` object provides info on the load states of the paging source
-        // implementation & also for the RemoteMediator (e.g. Local Database) impl., if one exists
-        // Different combinedLoadStates - refresh, prepend, append
-        // Different load states - Loading, Error and NotLoading states
-
+    PullToRefreshBox(
+        isRefreshing = isRefreshing,
+        onRefresh = { lazyPagingItems.refresh() },
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(paddingValues)
+    ) {
         val loadState = lazyPagingItems.loadState
-        when (loadState.refresh) {
-            is LoadState.Loading -> {
-                CircularProgressIndicator()
-            }
-
-            is LoadState.Error -> {
-                val error = (loadState.refresh as LoadState.Error).error.message
-                Text(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp, bottom = 4.dp)
-                        .padding(horizontal = 8.dp),
-                    text = error ?: "Something went wrong!",
-                    textAlign = TextAlign.Start,
-                )
-            }
-
-            else -> {
-                // Use the Paging items extension
-                LazyColumn(modifier = Modifier.padding(8.dp)) {
-                    items(
-                        lazyPagingItems.itemCount,
-                        key = { index ->
-                            val item = lazyPagingItems[index]
-                            "${item?.id ?: ""}_$index"
-                        }) { index ->
+        if (loadState.refresh is LoadState.Error && lazyPagingItems.itemCount == 0) {
+            val error = (loadState.refresh as LoadState.Error).error.message
+            Text(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .align(Alignment.Center),
+                text = error ?: "Something went wrong!",
+                textAlign = TextAlign.Center,
+            )
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(8.dp)
+            ) {
+                items(
+                    lazyPagingItems.itemCount,
+                    key = { index ->
                         val item = lazyPagingItems[index]
-                        if (item != null) {
-                            LazyListItem(
-                                quote = item.content,
-                                author = item.author
-                            )
-                        }
+                        "${item?.id ?: ""}_$index"
+                    }) { index ->
+                    val item = lazyPagingItems[index]
+                    if (item != null) {
+                        LazyListItem(
+                            quote = item.content,
+                            author = item.author
+                        )
                     }
                 }
+            }
+
+            if (lazyPagingItems.itemCount == 0 && isRefreshing) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
         }
     }
@@ -95,6 +103,31 @@ fun LazyListItem(quote: String, author: String) {
             text = "-$author",
             textAlign = TextAlign.End
         )
+    }
+}
+
+@Composable
+fun PullToRefreshBox(
+    isRefreshing: Boolean,
+    onRefresh: () -> Unit,
+    modifier: Modifier = Modifier,
+    state: PullToRefreshState = rememberPullToRefreshState(),
+    contentAlignment: Alignment = Alignment.TopStart,
+    indicator: @Composable BoxScope.() -> Unit = {
+        Indicator(
+            modifier = Modifier.align(Alignment.TopCenter),
+            state = state,
+            isRefreshing = isRefreshing
+        )
+    },
+    content: @Composable BoxScope.() -> Unit
+) {
+    Box(
+        modifier.pullToRefresh(state = state, isRefreshing = isRefreshing, onRefresh = onRefresh),
+        contentAlignment = contentAlignment
+    ) {
+        content()
+        indicator()
     }
 }
 
