@@ -76,6 +76,10 @@ dependencies {
     implementation(libs.androidx.compose.paging)
     implementation(libs.androidx.compose.paging.runtime)
 
+    // Navigation3
+    implementation(libs.androidx.navigation3.runtime)
+    implementation(libs.androidx.navigation3.ui)
+
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

@@ -1,6 +1,5 @@
 package com.quotify.feature.home
 
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -11,6 +10,7 @@ import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,8 +23,8 @@ import androidx.paging.compose.itemKey
 
 @Composable
 fun HomeScreen(
-    paddingValues: PaddingValues,
     viewModel: HomeViewModel = hiltViewModel(),
+    onQuoteClick: (String) -> Unit,
 ) {
     val lazyPagingItems = viewModel.pagingDataFlow.collectAsLazyPagingItems()
     val isRefreshing = lazyPagingItems.loadState.refresh is LoadState.Loading
@@ -34,8 +34,8 @@ fun HomeScreen(
         onRefresh = { lazyPagingItems.refresh() },
         modifier =
             Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
+                .fillMaxSize(),
+        state = rememberPullToRefreshState(),
     ) {
         val loadState = lazyPagingItems.loadState
         when (loadState.refresh) {
@@ -112,19 +112,19 @@ fun LazyListItem(
 
 // @Composable
 // fun PullToRefreshBox(
-//    isRefreshing: Boolean,
-//    onRefresh: () -> Unit,
-//    modifier: Modifier = Modifier,
-//    state: PullToRefreshState = rememberPullToRefreshState(),
-//    contentAlignment: Alignment = Alignment.TopStart,
-//    indicator: @Composable BoxScope.() -> Unit = {
+//     isRefreshing: Boolean,
+//     onRefresh: () -> Unit,
+//     modifier: Modifier = Modifier,
+//     state: PullToRefreshState = rememberPullToRefreshState(),
+//     contentAlignment: Alignment = Alignment.TopStart,
+//     indicator: @Composable BoxScope.() -> Unit = {
 //        Indicator(
 //            modifier = Modifier.align(Alignment.TopCenter),
 //            state = state,
 //            isRefreshing = isRefreshing
 //        )
 //    },
-//    content: @Composable BoxScope.() -> Unit
+//     content: @Composable BoxScope.() -> Unit
 // ) {
 //    Box(
 //        modifier.pullToRefresh(state = state, isRefreshing = isRefreshing, onRefresh = onRefresh),

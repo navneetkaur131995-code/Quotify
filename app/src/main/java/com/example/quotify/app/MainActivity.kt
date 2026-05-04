@@ -29,8 +29,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.quotify.R
+import com.example.quotify.app.navigation.QuotifyNavHost
 import com.example.quotify.app.theme.QuotifyTheme
-import com.quotify.feature.home.HomeScreen
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -71,7 +71,7 @@ class MainActivity : ComponentActivity() {
                         }
                     },
                 ) { paddingValues ->
-                    HomeScreen(paddingValues)
+                    QuotifyNavHost(paddingValues = paddingValues)
                 }
             }
         }

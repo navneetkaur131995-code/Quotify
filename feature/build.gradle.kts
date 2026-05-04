@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ktlint)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 ktlint {
@@ -73,6 +74,11 @@ dependencies {
     implementation(libs.android.hilt)
     ksp(libs.android.hilt.compiler)
     ksp(libs.androidx.hilt.compiler)
+
+    // Navigation3
+    implementation(libs.androidx.navigation3.runtime)
+    implementation(libs.androidx.navigation3.ui)
+    implementation(libs.androidx.lifecycle.viewmodel.navigation3)
 
     // Testing
     testImplementation(libs.junit)
