@@ -1,5 +1,5 @@
 package com.quotify.core.domain.model
 
 data class QuotesList(
-    val results: List<Quote>
+    val results: List<Quote>,
 )

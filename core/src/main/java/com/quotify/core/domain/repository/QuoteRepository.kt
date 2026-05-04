@@ -1,7 +1,8 @@
 package com.quotify.core.domain.repository
 
+import androidx.paging.PagingSource
 import com.quotify.core.domain.model.Quote
 
 interface QuoteRepository {
-    suspend fun getQuotes(): List<Quote>
+    fun getQuotesPagingSource(): PagingSource<Int, Quote>
 }
