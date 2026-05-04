@@ -5,17 +5,14 @@ import com.quotify.core.data.network.model.QuotesListAPIResponse
 import com.quotify.core.domain.model.Quote
 import com.quotify.core.domain.model.QuotesList
 
-fun QuotesListAPIResponse.toDomain(): QuotesList {
-    return QuotesList(
-        results = results.map { it.toDomain() }
-
+fun QuotesListAPIResponse.toDomain(): QuotesList =
+    QuotesList(
+        results = quotes.map { it.toDomain() },
     )
-}
 
-fun QuoteAPIResponse.toDomain(): Quote {
-    return Quote(
-        id = id,
-        content = content,
-        author = author
+fun QuoteAPIResponse.toDomain(): Quote =
+    Quote(
+        id = id.toString(),
+        content = quote,
+        author = author,
     )
-}

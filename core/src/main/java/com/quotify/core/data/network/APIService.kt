@@ -2,9 +2,12 @@ package com.quotify.core.data.network
 
 import com.quotify.core.data.network.model.QuotesListAPIResponse
 import retrofit2.http.GET
+import retrofit2.http.Query
 
-interface APIService{
-
+interface APIService {
     @GET("quotes")
-    suspend fun getQuotesList() : QuotesListAPIResponse
+    suspend fun getQuotesList(
+        @Query("limit") limit: Int = 20,
+        @Query("skip") skip: Int = 0,
+    ): QuotesListAPIResponse
 }

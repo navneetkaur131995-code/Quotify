@@ -1,20 +1,19 @@
 package com.quotify.core.data.repository
 
-import com.quotify.core.data.mapper.toDomain
+import androidx.paging.PagingSource
 import com.quotify.core.data.network.APIService
+import com.quotify.core.data.paging.QuotesPagingSource
 import com.quotify.core.domain.model.Quote
 import com.quotify.core.domain.repository.QuoteRepository
-import jakarta.inject.Inject
+import javax.inject.Inject
 
-class QuoteRepositoryImpl @Inject constructor(
-    private val apiService: APIService
-) : QuoteRepository {
-
-    override suspend fun getQuotes(): List<Quote> {
-        val response = apiService.getQuotesList()
-        val quotes = response.results.map {
-            it.toDomain()
-        }
-        return quotes
+class QuoteRepositoryImpl
+    @Inject
+    constructor(
+        private val apiService: APIService,
+    ) : QuoteRepository {
+        override fun getQuotesPagingSource(): PagingSource<Int, Quote> =
+            QuotesPagingSource(
+                fetchQuotes = { skip, limit -> apiService.getQuotesList(limit = limit, skip = skip) },
+            )
     }
-}
