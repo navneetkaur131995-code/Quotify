@@ -47,30 +47,30 @@ class MainActivity : ComponentActivity() {
                     topBar = {
                         TopAppBar(
                             title = { Text(text = "Quotify", color = Color.Black) },
-                            colors = topAppBarColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                titleContentColor = MaterialTheme.colorScheme.primary,
-                            ),
+                            colors =
+                                topAppBarColors(
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    titleContentColor = MaterialTheme.colorScheme.primary,
+                                ),
                             navigationIcon = {
                                 IconButton(
                                     onClick = {},
-                                    modifier = Modifier.padding(8.dp)
-                                )
-                                {
+                                    modifier = Modifier.padding(8.dp),
+                                ) {
                                     Icon(painter = painterResource(R.drawable.ic_back), "Back")
                                 }
-                            })
+                            },
+                        )
                     },
                     bottomBar = {
                         BottomAppBar(
                             containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.primary
-                        )
-                        {
+                            contentColor = MaterialTheme.colorScheme.primary,
+                        ) {
                             BottomBarActions()
                         }
-                    })
-                { paddingValues ->
+                    },
+                ) { paddingValues ->
                     HomeScreen(paddingValues)
                 }
             }
@@ -83,34 +83,38 @@ fun BottomBarActions() {
     Row(
         modifier = Modifier.fillMaxSize(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceEvenly
-    )
-    {
+        horizontalArrangement = Arrangement.SpaceEvenly,
+    ) {
         BottomBarButtons(title = "Home", image = R.drawable.ic_quotes_home, action = {})
         BottomBarButtons(title = "Favorites", image = R.drawable.ic_favorite, action = {})
     }
 }
 
 @Composable
-fun BottomBarButtons(title: String, image: Int, action: () -> Unit) {
+fun BottomBarButtons(
+    title: String,
+    image: Int,
+    action: () -> Unit,
+) {
     Column(
-        modifier = Modifier
-            .fillMaxHeight()
-            .padding(16.dp)
-            .clickable(onClick = action),
+        modifier =
+            Modifier
+                .fillMaxHeight()
+                .padding(16.dp)
+                .clickable(onClick = action),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceEvenly
+        verticalArrangement = Arrangement.SpaceEvenly,
     ) {
         Icon(painter = painterResource(image), title)
         Text(text = title, fontSize = 12.sp)
     }
 }
 
-//@Preview
-//@Composable
-//fun BottomBarPreview() {
+// @Preview
+// @Composable
+// fun BottomBarPreview() {
 //    BottomBarActions()
-//}
+// }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Preview
@@ -118,17 +122,18 @@ fun BottomBarButtons(title: String, image: Int, action: () -> Unit) {
 fun TopBarPreview() {
     TopAppBar(
         title = { Text(text = "Quotify") },
-        colors = topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            titleContentColor = MaterialTheme.colorScheme.primary,
-        ),
+        colors =
+            topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                titleContentColor = MaterialTheme.colorScheme.primary,
+            ),
         navigationIcon = {
             IconButton(
                 onClick = {},
-                modifier = Modifier.padding(16.dp)
-            )
-            {
+                modifier = Modifier.padding(16.dp),
+            ) {
                 Icon(painter = painterResource(R.drawable.ic_back), "Back")
             }
-        })
+        },
+    )
 }
