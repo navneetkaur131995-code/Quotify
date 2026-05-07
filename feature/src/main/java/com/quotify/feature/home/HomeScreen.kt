@@ -20,14 +20,17 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
+import com.quotify.core.navigation.LocalNavigator
+import com.quotify.feature.quoteDetails.QuoteDetailNavKey
 
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
-    onQuoteClick: (String) -> Unit,
 ) {
     val lazyPagingItems = viewModel.pagingDataFlow.collectAsLazyPagingItems()
     val isRefreshing = lazyPagingItems.loadState.refresh is LoadState.Loading
+
+    val navigator = LocalNavigator.current
 
     PullToRefreshBox(
         isRefreshing = isRefreshing,
@@ -67,8 +70,13 @@ fun HomeScreen(
                         count = lazyPagingItems.itemCount,
                         key = lazyPagingItems.itemKey { it.id },
                     ) { index ->
-                        lazyPagingItems[index]?.let {
-                            LazyListItem(it.content, it.author)
+                        lazyPagingItems[index]?.let { quote ->
+                            LazyListItem(
+                                quote.content,
+                                quote.author,
+                                onQuoteClick =
+                                    { navigator.navigate(QuoteDetailNavKey(quote.id)) },
+                            )
                         }
                     }
                 }
@@ -80,6 +88,7 @@ fun HomeScreen(
 fun LazyListItem(
     quote: String,
     author: String,
+    onQuoteClick: () -> Unit,
 ) {
     ElevatedCard(
         modifier =
@@ -88,6 +97,7 @@ fun LazyListItem(
                 .padding(4.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        onClick = { onQuoteClick() },
     ) {
         Text(
             modifier =

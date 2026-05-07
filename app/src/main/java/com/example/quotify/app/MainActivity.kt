@@ -21,6 +21,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,9 +30,15 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation3.runtime.rememberNavBackStack
 import com.example.quotify.R
+import com.example.quotify.app.navigation.AppNavigator
+import com.example.quotify.app.navigation.QuotifyNavConfiguration
 import com.example.quotify.app.navigation.QuotifyNavHost
 import com.example.quotify.app.theme.QuotifyTheme
+import com.quotify.core.navigation.LocalNavigator
+import com.quotify.feature.home.HomeNavKey
+import com.quotify.feature.home.HomeNavKeys
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -41,37 +49,46 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
         setContent {
+            val backStack =
+                rememberNavBackStack(
+                    configuration = QuotifyNavConfiguration,
+                    HomeNavKey(HomeNavKeys.QuoteList), // start destination
+                )
+            val navigator = remember(backStack) { AppNavigator(backStack) }
+
             QuotifyTheme {
-                Scaffold(
-                    modifier = Modifier.fillMaxSize(),
-                    topBar = {
-                        TopAppBar(
-                            title = { Text(text = "Quotify", color = Color.Black) },
-                            colors =
-                                topAppBarColors(
-                                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                    titleContentColor = MaterialTheme.colorScheme.primary,
-                                ),
-                            navigationIcon = {
-                                IconButton(
-                                    onClick = {},
-                                    modifier = Modifier.padding(8.dp),
-                                ) {
-                                    Icon(painter = painterResource(R.drawable.ic_back), "Back")
-                                }
-                            },
-                        )
-                    },
-                    bottomBar = {
-                        BottomAppBar(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.primary,
-                        ) {
-                            BottomBarActions()
-                        }
-                    },
-                ) { paddingValues ->
-                    QuotifyNavHost(paddingValues = paddingValues)
+                CompositionLocalProvider(LocalNavigator provides navigator) {
+                    Scaffold(
+                        modifier = Modifier.fillMaxSize(),
+                        topBar = {
+                            TopAppBar(
+                                title = { Text(text = "Quotify", color = Color.Black) },
+                                colors =
+                                    topAppBarColors(
+                                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                        titleContentColor = MaterialTheme.colorScheme.primary,
+                                    ),
+                                navigationIcon = {
+                                    IconButton(
+                                        onClick = { navigator.goBack() },
+                                        modifier = Modifier.padding(8.dp),
+                                    ) {
+                                        Icon(painter = painterResource(R.drawable.ic_back), "Back")
+                                    }
+                                },
+                            )
+                        },
+                        bottomBar = {
+                            BottomAppBar(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = MaterialTheme.colorScheme.primary,
+                            ) {
+                                BottomBarActions()
+                            }
+                        },
+                    ) { paddingValues ->
+                        QuotifyNavHost(backStack = backStack, paddingValues = paddingValues)
+                    }
                 }
             }
         }
@@ -109,12 +126,6 @@ fun BottomBarButtons(
         Text(text = title, fontSize = 12.sp)
     }
 }
-
-// @Preview
-// @Composable
-// fun BottomBarPreview() {
-//    BottomBarActions()
-// }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Preview

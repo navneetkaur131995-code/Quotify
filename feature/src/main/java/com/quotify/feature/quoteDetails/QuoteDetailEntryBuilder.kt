@@ -1,19 +1,34 @@
 package com.quotify.feature.quoteDetails
 
+import androidx.compose.runtime.LaunchedEffect
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
 import com.quotify.core.navigation.LocalNavigator
 
 fun EntryProviderScope<NavKey>.quoteDetailEntries() {
     entry<QuoteDetailNavKey> { key ->
-        val navigator = LocalNavigator.current
-        // SavedStateHandle receives the key's fields automatically when you see
-        // rememberViewModelStoreNavEntryDecorator + Hilt's hiltViewModel().
-        // @TODO: Tomorrow
-//        val viewModel : QuoteDetailViewModel = hiltViewModel()
-//        QuoteDetailScreen(
-//            viewModel = viewModel,
-//            onBack = navigator::goBack,
-//        )
+        val viewModel: QuoteDetailViewModel = hiltViewModel()
+
+//        Benefits of this:
+//        1. Type Safety: You are using the QuoteDetailNavKey (a Kotlin data class) directly.
+//        This is much safer than relying on a String key inside a SavedStateHandle map which can easily have typos.
+//        2. Explicitness: It follows the "Single Source of Truth" principle. The Navigation Key is the source of the
+//        quoteId. Passing it directly from the key to the ViewModel function is more transparent than hiding it inside
+//        a SavedStateHandle.
+//        3. Testability: You can now test QuoteDetailViewModel by simply calling viewModel.fetchQuoteDetails("id") in
+//        a JUnit test, without having to mock a SavedStateHandle or set up complex CreationExtras.
+//        Summary of the Flow
+//            1. Navigation Key (Data) ->
+//            2. EntryBuilder (Logic Glue/Router) ->
+//            3. ViewModel.fetch (State Transition) ->
+//            4.UseCase (Business Logic) ->
+//            5.UI (Render)
+
+        LaunchedEffect(key.quoteId) {
+            viewModel.fetchQuoteDetails(key.quoteId)
+        }
+
+        QuoteDetailScreen(viewModel = viewModel)
     }
 }

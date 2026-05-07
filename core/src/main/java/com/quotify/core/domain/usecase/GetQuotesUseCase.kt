@@ -3,6 +3,7 @@ package com.quotify.core.domain.usecase
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
+import com.quotify.core.common.Outcome
 import com.quotify.core.domain.model.Quote
 import com.quotify.core.domain.repository.QuoteRepository
 import kotlinx.coroutines.flow.Flow
@@ -13,7 +14,7 @@ class GetQuotesUseCase
     constructor(
         private val quoteRepository: QuoteRepository,
     ) {
-        operator fun invoke(): Flow<PagingData<Quote>> =
+        fun getAllQuotes(): Flow<PagingData<Quote>> =
             Pager(
                 config =
                     PagingConfig(
@@ -23,4 +24,13 @@ class GetQuotesUseCase
                     ),
                 pagingSourceFactory = { quoteRepository.getQuotesPagingSource() },
             ).flow
+
+        suspend fun getSingleQuote(quoteId: String): Outcome<Quote> =
+            when (val result = quoteRepository.getSingleQuote(quoteId)) {
+                is Outcome.Success -> result
+                is Outcome.Failure -> result
+                else -> {
+                    Outcome.Failure(Exception("Unknown outcome"))
+                }
+            }
     }
