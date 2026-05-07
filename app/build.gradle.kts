@@ -74,7 +74,6 @@ dependencies {
 
     // Hilt
     implementation(libs.android.hilt)
-    implementation(libs.androidx.navigation3.ui)
     ksp(libs.android.hilt.compiler)
     ksp(libs.androidx.hilt.compiler)
     implementation(libs.androidx.hilt.navigation)

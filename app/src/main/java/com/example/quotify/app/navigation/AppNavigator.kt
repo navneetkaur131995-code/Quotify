@@ -20,7 +20,7 @@ class AppNavigator(
     }
 
     override fun goBack() {
-        if (backStack.size > 1) backStack.removeAt(backStack.lastIndex)
+        backStack.removeLastOrNull()
     }
 
     override fun popUpTo(

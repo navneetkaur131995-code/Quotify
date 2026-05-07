@@ -16,7 +16,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
@@ -24,9 +23,7 @@ import com.quotify.core.navigation.LocalNavigator
 import com.quotify.feature.quoteDetails.QuoteDetailNavKey
 
 @Composable
-fun HomeScreen(
-    viewModel: HomeViewModel = hiltViewModel(),
-) {
+fun HomeScreen(viewModel: HomeViewModel) {
     val lazyPagingItems = viewModel.pagingDataFlow.collectAsLazyPagingItems()
     val isRefreshing = lazyPagingItems.loadState.refresh is LoadState.Loading
 
@@ -97,7 +94,7 @@ fun LazyListItem(
                 .padding(4.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        onClick = { onQuoteClick() },
+        onClick = onQuoteClick,
     ) {
         Text(
             modifier =

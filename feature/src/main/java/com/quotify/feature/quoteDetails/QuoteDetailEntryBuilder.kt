@@ -1,14 +1,17 @@
 package com.quotify.feature.quoteDetails
 
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
-import com.quotify.core.navigation.LocalNavigator
 
 fun EntryProviderScope<NavKey>.quoteDetailEntries() {
     entry<QuoteDetailNavKey> { key ->
+
         val viewModel: QuoteDetailViewModel = hiltViewModel()
+
 
 //        Benefits of this:
 //        1. Type Safety: You are using the QuoteDetailNavKey (a Kotlin data class) directly.
@@ -28,7 +31,8 @@ fun EntryProviderScope<NavKey>.quoteDetailEntries() {
         LaunchedEffect(key.quoteId) {
             viewModel.fetchQuoteDetails(key.quoteId)
         }
+        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-        QuoteDetailScreen(viewModel = viewModel)
+        QuoteDetailScreen(uiState = uiState)
     }
 }

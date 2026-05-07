@@ -12,27 +12,23 @@ import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.quotify.core.domain.model.Quote
 
 @Composable
-fun QuoteDetailScreen(viewModel: QuoteDetailViewModel) {
-    val state by viewModel.uiState.collectAsState()
-
-    when (state) {
+fun QuoteDetailScreen(uiState: QuoteDetailUiState) {
+    when (uiState) {
         is QuoteDetailUiState.Loading -> CircularProgressIndicator()
 
         is QuoteDetailUiState.Success -> {
-            val data = (state as QuoteDetailUiState.Success).quote
+            val data = (uiState).quote
             QuoteDetail(data)
         }
 
         is QuoteDetailUiState.Error -> {
-            Text(text = (state as QuoteDetailUiState.Error).message)
+            Text(text = (uiState).message)
         }
     }
 }
