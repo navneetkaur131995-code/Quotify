@@ -15,5 +15,5 @@ class HomeViewModel
     ) : ViewModel() {
         // Define the PagingData Flow
         // We use 'cachedIn' so the data survives configuration changes (like rotation).
-        val pagingDataFlow = getQuotesUseCase().cachedIn(viewModelScope)
+        val pagingDataFlow = getQuotesUseCase.getAllQuotes().cachedIn(viewModelScope)
     }

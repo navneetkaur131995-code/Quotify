@@ -13,7 +13,7 @@ class GetQuotesUseCase
     constructor(
         private val quoteRepository: QuoteRepository,
     ) {
-        operator fun invoke(): Flow<PagingData<Quote>> =
+        fun getAllQuotes(): Flow<PagingData<Quote>> =
             Pager(
                 config =
                     PagingConfig(

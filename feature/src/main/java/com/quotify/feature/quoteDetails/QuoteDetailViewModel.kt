@@ -1,0 +1,47 @@
+package com.quotify.feature.quoteDetails
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.quotify.core.common.DomainResult
+import com.quotify.core.domain.model.Quote
+import com.quotify.core.domain.usecase.GetSingleQuoteUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+sealed interface QuoteDetailUiState {
+    data object Loading : QuoteDetailUiState
+
+    data class Success(
+        val quote: Quote,
+    ) : QuoteDetailUiState
+
+    data class Error(
+        val message: String,
+    ) : QuoteDetailUiState
+}
+
+@HiltViewModel
+class QuoteDetailViewModel
+    @Inject
+    constructor(
+        private val getSingleQuoteUseCase: GetSingleQuoteUseCase,
+    ) : ViewModel() {
+        private val _uiState = MutableStateFlow<QuoteDetailUiState>(QuoteDetailUiState.Loading)
+        val uiState = _uiState.asStateFlow()
+
+        fun fetchQuoteDetails(quoteId: String) {
+            if (_uiState.value is QuoteDetailUiState.Success) return
+
+            viewModelScope.launch {
+                _uiState.value =
+                    when (val result = getSingleQuoteUseCase(quoteId)) {
+                        is DomainResult.Success -> QuoteDetailUiState.Success(result.data)
+                        is DomainResult.Failure ->
+                            QuoteDetailUiState.Error(result.error.message ?: "Something went wrong")
+                    }
+            }
+        }
+    }

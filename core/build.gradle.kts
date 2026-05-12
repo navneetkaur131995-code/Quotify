@@ -38,12 +38,8 @@ android {
             )
         }
     }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-    kotlinOptions {
-        jvmTarget = "17"
+    kotlin {
+        jvmToolchain(17)
     }
 }
 
@@ -75,6 +71,10 @@ dependencies {
     // Paging
     implementation(libs.androidx.compose.paging)
     implementation(libs.androidx.compose.paging.runtime)
+
+    // Navigation3
+    implementation(libs.androidx.navigation3.runtime)
+    implementation(libs.androidx.navigation3.ui)
 
     // Testing
     testImplementation(libs.junit)
