@@ -1,7 +1,7 @@
 package com.quotify.core.di
 
-import com.quotify.core.data.repository.QuoteRepositoryImpl
-import com.quotify.core.domain.repository.QuoteRepository
+import com.quotify.core.data.network.AndroidNetworkMonitor
+import com.quotify.core.domain.NetworkMonitor
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -10,8 +10,8 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class RepositoryModule {
+abstract class ConnectivityModule {
     @Binds
     @Singleton
-    abstract fun bindsQuoteRepository(quoteRepositoryImpl: QuoteRepositoryImpl): QuoteRepository
+    abstract fun bindsNetworkMonitor(impl: AndroidNetworkMonitor): NetworkMonitor
 }

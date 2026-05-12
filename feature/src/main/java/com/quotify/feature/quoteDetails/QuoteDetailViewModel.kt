@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.quotify.core.common.Outcome
 import com.quotify.core.domain.model.Quote
-import com.quotify.core.domain.usecase.GetQuotesUseCase
+import com.quotify.core.domain.usecase.GetQuoteDetailUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,28 +27,28 @@ sealed class QuoteDetailUiState {
 class QuoteDetailViewModel
     @Inject
     constructor(
-        private val getQuotesUseCase: GetQuotesUseCase,
+        private val getQuoteDetailUseCase: GetQuoteDetailUseCase,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow<QuoteDetailUiState>(QuoteDetailUiState.Loading)
         val uiState = _uiState.asStateFlow()
 
         fun fetchQuoteDetails(quoteId: String) {
+            // Guard: if already loaded this quote, don't re-fetch
+            if (_uiState.value is QuoteDetailUiState.Success) return
+
             viewModelScope.launch {
+                // Set loading state before the suspend call
                 _uiState.value = QuoteDetailUiState.Loading
 
-                when (val result = getQuotesUseCase.getSingleQuote(quoteId)) {
-                    is Outcome.Success -> {
-                        _uiState.value = QuoteDetailUiState.Success(result.data)
+                // Call the use case — reads from Room, near-instant
+                _uiState.value =
+                    when (val result = getQuoteDetailUseCase(quoteId)) {
+                        is Outcome.Success -> QuoteDetailUiState.Success(result.data)
+                        is Outcome.Failure -> QuoteDetailUiState.Error("Something went wrong")
+                        else -> {
+                            QuoteDetailUiState.Error("Unexpected outcome")
+                        }
                     }
-
-                    is Outcome.Failure -> {
-                        _uiState.value = QuoteDetailUiState.Error("Something went wrong")
-                    }
-
-                    else -> {
-                        _uiState.value = QuoteDetailUiState.Error("Unknown outcome")
-                    }
-                }
             }
         }
     }

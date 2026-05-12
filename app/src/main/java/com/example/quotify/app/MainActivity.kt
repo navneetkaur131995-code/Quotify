@@ -130,7 +130,7 @@ fun BottomBarButtons(
 @OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
-fun TopBarPreview() {
+private fun TopBarPreview() {
     TopAppBar(
         title = { Text(text = "Quotify") },
         colors =

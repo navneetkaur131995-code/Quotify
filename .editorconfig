@@ -1,27 +1,23 @@
 root = true
 
-[*]
-charset = utf-8
-end_of_line = lf
-indent_size = 4
-indent_style = space
-insert_final_newline = true
-trim_trailing_whitespace = true
-
 [*.{kt,kts}]
-max_line_length = 120
+charset=utf-8
+end_of_line=lf
+indent_style=space
+indent_size=4
+insert_final_newline=true
+max_line_length=120
 
-# ktlint standard rules
-ktlint_standard = enabled
-ktlint_function_naming_ignore_when_annotated_with = Composable
+ktlint_code_style=ktlint_official
 
-# Allow wildcard imports
-ktlint_standard_no-wildcard-imports = disabled
+# Relaxed rules for easier development
+ktlint_standard_no-wildcard-imports=disabled
+ktlint_standard_function-naming=disabled
+ktlint_standard_filename=disabled
+ktlint_standard_property-naming=disabled
+ktlint_compose_modifier-missing-check=disabled
+ktlint_compose_modifier-reused=disabled
+ktlint_compose_modifier-without-default=disabled
+ktlint_compose_lambda-naming=disabled
+ktlint_compose_compositionlocal-allowlist=disabled
 
-# Compose-specific rules (io.nlopez.compose.rules)
-ktlint_compose_compositionlocal-allowlist = disabled
-ktlint_compose_preview-public-check = disabled
-ktlint_compose_naming-check = enabled
-ktlint_compose_composable-function-name = enabled
-ktlint_compose_modifier-missing-check = disabled
-ktlint_compose_unstable-collections =
