@@ -10,7 +10,7 @@ import androidx.navigation3.runtime.NavKey
 * */
 
 fun EntryProviderScope<NavKey>.homeEntries() {
-    entry<HomeNavKey> {
+    entry<HomeNavKey.QuoteList> {
         val viewModel: HomeViewModel = hiltViewModel()
         HomeScreen(
             viewModel = viewModel,

@@ -1,7 +1,7 @@
 package com.quotify.core.data.repository
 
 import androidx.paging.PagingSource
-import com.quotify.core.common.Outcome
+import com.quotify.core.common.DomainResult
 import com.quotify.core.data.mapper.toDomain
 import com.quotify.core.data.network.APIService
 import com.quotify.core.data.paging.QuotesPagingSource
@@ -19,11 +19,11 @@ class QuoteRepositoryImpl
                 fetchQuotes = { skip, limit -> apiService.getQuotesList(limit = limit, skip = skip) },
             )
 
-        override suspend fun getSingleQuote(id: String): Outcome<Quote> =
+        override suspend fun getSingleQuote(id: String): DomainResult<Quote> =
             try {
                 val result = apiService.getSingleQuote(id)
-                Outcome.Success(result.toDomain())
+                DomainResult.Success(result.toDomain())
             } catch (e: Exception) {
-                Outcome.Failure(e)
+                DomainResult.Failure(e)
             }
     }

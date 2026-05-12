@@ -12,7 +12,6 @@ fun EntryProviderScope<NavKey>.quoteDetailEntries() {
 
         val viewModel: QuoteDetailViewModel = hiltViewModel()
 
-
 //        Benefits of this:
 //        1. Type Safety: You are using the QuoteDetailNavKey (a Kotlin data class) directly.
 //        This is much safer than relying on a String key inside a SavedStateHandle map which can easily have typos.

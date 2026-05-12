@@ -15,7 +15,7 @@ val QuotifyNavConfiguration: SavedStateConfiguration =
         serializersModule =
             SerializersModule {
                 polymorphic(NavKey::class) {
-                    subclass(HomeNavKey::class, HomeNavKey.serializer())
+                    subclass(HomeNavKey.QuoteList::class, HomeNavKey.QuoteList.serializer())
                     subclass(QuoteDetailNavKey::class, QuoteDetailNavKey.serializer())
                 }
             }
