@@ -38,7 +38,6 @@ import com.example.quotify.app.navigation.QuotifyNavHost
 import com.example.quotify.app.theme.QuotifyTheme
 import com.quotify.core.navigation.LocalNavigator
 import com.quotify.feature.home.HomeNavKey
-import com.quotify.feature.home.HomeNavKeys
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -52,7 +51,7 @@ class MainActivity : ComponentActivity() {
             val backStack =
                 rememberNavBackStack(
                     configuration = QuotifyNavConfiguration,
-                    HomeNavKey(HomeNavKeys.QuoteList), // start destination
+                    HomeNavKey.QuoteList, // start destination
                 )
             val navigator = remember(backStack) { AppNavigator(backStack) }
 
@@ -70,17 +69,18 @@ class MainActivity : ComponentActivity() {
                                     ),
                                 navigationIcon = {
                                     val canGoBack = backStack.size > 1
-                                    if (canGoBack)
+                                    if (canGoBack) {
                                         IconButton(
                                             onClick = { navigator.goBack() },
                                             modifier = Modifier.padding(8.dp),
                                         ) {
                                             Icon(painter = painterResource(R.drawable.ic_back), "Back")
                                         }
+                                    }
                                 },
                             )
                         },
-                        bottomBar =  {
+                        bottomBar = {
                             BottomAppBar(
                                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                                 contentColor = MaterialTheme.colorScheme.primary,
@@ -132,7 +132,7 @@ fun BottomBarButtons(
 @OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
-fun TopBarPreview() {
+private fun TopBarPreview() {
     TopAppBar(
         title = { Text(text = "Quotify") },
         colors =
