@@ -29,7 +29,7 @@ import com.quotify.core.navigation.LocalNavigator
 import com.quotify.feature.quoteDetails.QuoteDetailNavKey
 
 @Composable
-fun HomeScreen(viewModel: HomeViewModel = hiltViewModel()) {
+fun HomeScreen(viewModel: HomeViewModel) {
     val lazyPagingItems = viewModel.pagingDataFlow.collectAsLazyPagingItems()
     val isRefreshing = lazyPagingItems.loadState.refresh is LoadState.Loading
 

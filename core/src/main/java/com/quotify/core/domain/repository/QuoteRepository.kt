@@ -2,6 +2,7 @@ package com.quotify.core.domain.repository
 
 import androidx.paging.PagingData
 import com.quotify.core.common.Outcome
+import com.quotify.core.common.DomainResult
 import com.quotify.core.domain.model.Quote
 import kotlinx.coroutines.flow.Flow
 
@@ -17,5 +18,5 @@ interface QuoteRepository {
 
     // Reads a single quote from Room by ID.
     // Returns Outcome.Success if found, Outcome.Failure if not cached.
-    suspend fun getSingleQuote(id: String): Outcome<Quote>
+    suspend fun getSingleQuote(id: String): DomainResult<Quote>
 }

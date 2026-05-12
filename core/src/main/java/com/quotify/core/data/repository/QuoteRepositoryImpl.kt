@@ -1,11 +1,12 @@
 package com.quotify.core.data.repository
 
+import androidx.paging.PagingSource
+import com.quotify.core.common.DomainResult
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.map
-import com.quotify.core.common.Outcome
 import com.quotify.core.data.localDatabase.QuoteRemoteMediator
 import com.quotify.core.data.localDatabase.QuotifyDAO
 import com.quotify.core.data.localDatabase.QuotifyDatabase
@@ -47,15 +48,15 @@ class QuoteRepositoryImpl
                 pagingData.map { quoteEntity -> quoteEntity.toDomain() }
             }
 
-        override suspend fun getSingleQuote(id: String): Outcome<Quote> =
+        override suspend fun getSingleQuote(id: String): DomainResult<Quote> =
             try {
                 val quoteEntity = quotifyDAO.getQuoteById(id)
                 if (quoteEntity != null) {
-                    Outcome.Success(quoteEntity.toDomain())
+                    DomainResult.Success(quoteEntity.toDomain())
                 } else {
-                    Outcome.Failure(Exception("Quote with id $id not found in cache"))
+                    DomainResult.Failure(Exception("Quote with id $id not found in cache"))
                 }
             } catch (e: Exception) {
-                Outcome.Failure(e)
+                DomainResult.Failure(e)
             }
     }

@@ -9,6 +9,7 @@ import androidx.navigation3.runtime.NavKey
 
 fun EntryProviderScope<NavKey>.quoteDetailEntries() {
     entry<QuoteDetailNavKey> { key ->
+
         val viewModel: QuoteDetailViewModel = hiltViewModel()
 
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -31,6 +32,7 @@ fun EntryProviderScope<NavKey>.quoteDetailEntries() {
         LaunchedEffect(key.quoteId) {
             viewModel.fetchQuoteDetails(key.quoteId)
         }
+        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
         QuoteDetailScreen(uiState = uiState)
     }

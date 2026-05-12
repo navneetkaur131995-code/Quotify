@@ -20,4 +20,3 @@ ktlint_compose_modifier-reused=disabled
 ktlint_compose_modifier-without-default=disabled
 ktlint_compose_lambda-naming=disabled
 ktlint_compose_compositionlocal-allowlist=disabled
-

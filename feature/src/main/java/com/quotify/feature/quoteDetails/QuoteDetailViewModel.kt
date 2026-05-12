@@ -2,7 +2,7 @@ package com.quotify.feature.quoteDetails
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.quotify.core.common.Outcome
+import com.quotify.core.common.DomainResult
 import com.quotify.core.domain.model.Quote
 import com.quotify.core.domain.usecase.GetQuoteDetailUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -11,16 +11,16 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-sealed class QuoteDetailUiState {
-    data object Loading : QuoteDetailUiState()
+sealed interface QuoteDetailUiState {
+    data object Loading : QuoteDetailUiState
 
     data class Success(
         val quote: Quote,
-    ) : QuoteDetailUiState()
+    ) : QuoteDetailUiState
 
     data class Error(
         val message: String,
-    ) : QuoteDetailUiState()
+    ) : QuoteDetailUiState
 }
 
 @HiltViewModel
@@ -33,21 +33,14 @@ class QuoteDetailViewModel
         val uiState = _uiState.asStateFlow()
 
         fun fetchQuoteDetails(quoteId: String) {
-            // Guard: if already loaded this quote, don't re-fetch
             if (_uiState.value is QuoteDetailUiState.Success) return
 
             viewModelScope.launch {
-                // Set loading state before the suspend call
-                _uiState.value = QuoteDetailUiState.Loading
-
-                // Call the use case — reads from Room, near-instant
                 _uiState.value =
                     when (val result = getQuoteDetailUseCase(quoteId)) {
-                        is Outcome.Success -> QuoteDetailUiState.Success(result.data)
-                        is Outcome.Failure -> QuoteDetailUiState.Error("Something went wrong")
-                        else -> {
-                            QuoteDetailUiState.Error("Unexpected outcome")
-                        }
+                        is DomainResult.Success -> QuoteDetailUiState.Success(result.data)
+                        is DomainResult.Failure ->
+                            QuoteDetailUiState.Error(result.error.message ?: "Something went wrong")
                     }
             }
         }
