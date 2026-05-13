@@ -15,27 +15,24 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
-import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.itemKey
-import com.quotify.core.navigation.LocalNavigator
-import com.quotify.feature.quoteDetails.QuoteDetailNavKey
+import com.example.quotify.feature.R
+import com.quotify.core.domain.model.Quote
 
 @Composable
-fun HomeScreen(viewModel: HomeViewModel) {
-    val lazyPagingItems = viewModel.pagingDataFlow.collectAsLazyPagingItems()
+fun HomeScreen(
+    lazyPagingItems: LazyPagingItems<Quote>,
+    isOnline: Boolean,
+    onQuoteClick: (String) -> Unit,
+) {
     val isRefreshing = lazyPagingItems.loadState.refresh is LoadState.Loading
-
-    val isOnline by viewModel.isOnline.collectAsStateWithLifecycle()
-
-    val navigator = LocalNavigator.current
 
     val mediatorRefreshFailed =
         lazyPagingItems.loadState.mediator?.refresh is LoadState.Error
@@ -45,7 +42,12 @@ fun HomeScreen(viewModel: HomeViewModel) {
     //  - device is offline, OR
     //  - device is online but the remote refresh failed (server down, 5xx, etc.)
     // ...and only when there's actually data on screen to label as "cached".
-    val showCachedBanner = hasCachedItems && (!isOnline || mediatorRefreshFailed)
+    val showCachedBanner =
+        shouldShowCachedBanner(
+            isOnline = isOnline,
+            hasCachedItems = hasCachedItems,
+            mediatorRefreshFailed = mediatorRefreshFailed,
+        )
 
     Column(modifier = Modifier.fillMaxSize()) {
         AnimatedVisibility(visible = showCachedBanner) {
@@ -78,7 +80,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
                 else ->
                     QuotesList(
                         lazyPagingItems = lazyPagingItems,
-                        onQuoteClick = { id -> navigator.navigate(QuoteDetailNavKey(id)) },
+                        onQuoteClick = onQuoteClick,
                     )
             }
         }
@@ -87,7 +89,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
 
 @Composable
 private fun QuotesList(
-    lazyPagingItems: androidx.paging.compose.LazyPagingItems<com.quotify.core.domain.model.Quote>,
+    lazyPagingItems: LazyPagingItems<Quote>,
     onQuoteClick: (String) -> Unit,
 ) {
     LazyColumn(
@@ -102,7 +104,7 @@ private fun QuotesList(
         ) { index ->
             lazyPagingItems[index]?.let { quote ->
                 LazyListItem(
-                    quote = quote.quote,
+                    quote = quote.content,
                     author = quote.author,
                     onQuoteClick = { onQuoteClick(quote.id) },
                 )
@@ -124,14 +126,14 @@ private fun OfflineBanner(modifier: Modifier = Modifier) {
                 Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 10.dp),
-            text = "You're offline. Showing cached quotes.",
+            text = stringResource(R.string.offline_banner_message),
             style = MaterialTheme.typography.bodyMedium,
         )
     }
 }
 
 @Composable
-fun LazyListItem(
+private fun LazyListItem(
     quote: String,
     author: String,
     onQuoteClick: () -> Unit,
@@ -165,3 +167,11 @@ fun LazyListItem(
         )
     }
 }
+
+// Should be in VM,however, `lazyPagingItems.loading` is only available after `collectAsLazyPagingItems()`,
+// so this is a constraint here, so applied this pragmatic fix
+private fun shouldShowCachedBanner(
+    isOnline: Boolean,
+    hasCachedItems: Boolean,
+    mediatorRefreshFailed: Boolean,
+): Boolean = hasCachedItems && (!isOnline || mediatorRefreshFailed)

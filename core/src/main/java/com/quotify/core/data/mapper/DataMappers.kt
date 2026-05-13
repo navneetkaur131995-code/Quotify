@@ -1,7 +1,7 @@
 package com.quotify.core.data.mapper
 
 import com.quotify.core.data.localDatabase.QuoteEntity
-import com.quotify.core.data.network.model.QuoteAPIResponse
+import com.quotify.core.data.model.QuoteAPIResponse
 import com.quotify.core.domain.model.Quote
 
 fun QuoteAPIResponse.toEntity(): QuoteEntity =
@@ -15,7 +15,7 @@ fun QuoteAPIResponse.toEntity(): QuoteEntity =
 fun QuoteEntity.toDomain(): Quote =
     Quote(
         id = id,
-        quote = quote,
+        content = quote,
         author = author,
     )
 
@@ -23,6 +23,6 @@ fun QuoteEntity.toDomain(): Quote =
 fun QuoteAPIResponse.toDomain(): Quote =
     Quote(
         id = id.toString(),
-        quote = quote,
+        content = quote,
         author = author,
     )

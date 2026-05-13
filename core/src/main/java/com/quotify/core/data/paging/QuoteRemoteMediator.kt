@@ -1,10 +1,12 @@
-package com.quotify.core.data.localDatabase
+package com.quotify.core.data.paging
 
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.LoadType
 import androidx.paging.PagingState
 import androidx.paging.RemoteMediator
 import androidx.room.withTransaction
+import com.quotify.core.data.localDatabase.QuoteEntity
+import com.quotify.core.data.localDatabase.QuotifyDatabase
 import com.quotify.core.data.mapper.toEntity
 import com.quotify.core.data.network.APIService
 import javax.inject.Inject

@@ -1,0 +1,5 @@
+<resources>
+
+    <string name="offline_banner_message">You\'re offline. Showing cached quotes.</string>
+
+</resources>

@@ -11,7 +11,7 @@ interface QuotifyDAO {
     // The 'ORDER BY rowid ASC' preserves insertion order so the list
     // doesn't jump around when new pages are appended.
     @Query("SELECT * FROM quotes ORDER BY rowid ASC")
-    fun pagingSource(): PagingSource<Int, QuoteEntity>
+    fun getQuotesPagingSource(): PagingSource<Int, QuoteEntity>
 
     // Bulk insert. REPLACE means: if a row with the same primary key
     // already exists, overwrite it with fresh data. No duplicates.

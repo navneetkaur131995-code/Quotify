@@ -11,5 +11,5 @@ class GetQuotesUseCase
     constructor(
         private val quoteRepository: QuoteRepository,
     ) {
-        operator fun invoke(): Flow<PagingData<Quote>> = quoteRepository.getPager()
+        operator fun invoke(): Flow<PagingData<Quote>> = quoteRepository.getQuotesStream()
     }

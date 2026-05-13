@@ -3,7 +3,7 @@ package com.quotify.feature.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.cachedIn
-import com.quotify.core.domain.NetworkMonitor
+import com.quotify.core.domain.connectivity.NetworkMonitor
 import com.quotify.core.domain.usecase.GetQuotesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -27,7 +27,8 @@ class HomeViewModel
                 .stateIn(
                     scope = viewModelScope,
                     started = SharingStarted.WhileSubscribed(SUBSCRIPTION_TIMEOUT_MS),
-                    initialValue = true,
+                    initialValue = false, // banner will flash briefly on startup when online,
+                    // safer than not showing when offline
                 )
 
         private companion object {

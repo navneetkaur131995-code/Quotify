@@ -1,11 +1,14 @@
 package com.quotify.core.data.network
 
+import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
-import com.quotify.core.domain.NetworkMonitor
+import androidx.annotation.RequiresPermission
+import com.quotify.core.domain.connectivity.NetworkMonitor
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -27,6 +30,7 @@ class AndroidNetworkMonitor
     subscriber goes away (e.g. ViewModel is cleared + WhileSubscribed timeout expires).
     No manual lifecycle observer needed.
 */
+        @SuppressLint("MissingPermission")
         override val isOnline: Flow<Boolean> =
             callbackFlow {
                 val cm =
@@ -93,6 +97,7 @@ class AndroidNetworkMonitor
                 // we only care about the boolean transition.
                 .distinctUntilChanged()
 
+        @RequiresPermission(Manifest.permission.ACCESS_NETWORK_STATE)
         private fun ConnectivityManager.isCurrentlyValidated(): Boolean {
             val active = activeNetwork ?: return false
             val caps = getNetworkCapabilities(active) ?: return false

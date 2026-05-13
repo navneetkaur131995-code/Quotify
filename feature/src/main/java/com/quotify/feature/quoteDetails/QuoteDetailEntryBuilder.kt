@@ -12,8 +12,6 @@ fun EntryProviderScope<NavKey>.quoteDetailEntries() {
 
         val viewModel: QuoteDetailViewModel = hiltViewModel()
 
-        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
 //        Benefits of this:
 //        1. Type Safety: You are using the QuoteDetailNavKey (a Kotlin data class) directly.
 //        This is much safer than relying on a String key inside a SavedStateHandle map which can easily have typos.
@@ -32,6 +30,7 @@ fun EntryProviderScope<NavKey>.quoteDetailEntries() {
         LaunchedEffect(key.quoteId) {
             viewModel.fetchQuoteDetails(key.quoteId)
         }
+
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
         QuoteDetailScreen(uiState = uiState)

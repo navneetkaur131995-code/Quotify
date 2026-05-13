@@ -1,10 +1,8 @@
 package com.quotify.feature.quoteDetails
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -12,6 +10,7 @@ import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -20,7 +19,10 @@ import com.quotify.core.domain.model.Quote
 @Composable
 fun QuoteDetailScreen(uiState: QuoteDetailUiState) {
     when (uiState) {
-        is QuoteDetailUiState.Loading -> CircularProgressIndicator()
+        is QuoteDetailUiState.Loading ->
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
 
         is QuoteDetailUiState.Success -> {
             val data = (uiState).quote
@@ -28,45 +30,43 @@ fun QuoteDetailScreen(uiState: QuoteDetailUiState) {
         }
 
         is QuoteDetailUiState.Error -> {
-            Text(text = (uiState).message)
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(text = (uiState).message)
+            }
         }
     }
 }
 
 @Composable
 fun QuoteDetail(data: Quote) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        ElevatedCard(
+    ElevatedCard(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    ) {
+        Text(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .height(200.dp)
-                    .padding(4.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        ) {
-            Text(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp, bottom = 4.dp)
-                        .padding(horizontal = 8.dp),
-                text = data.quote,
-                textAlign = TextAlign.Start,
-                fontSize = MaterialTheme.typography.headlineMedium.fontSize,
-            )
-            Spacer(modifier = Modifier.weight(1f))
-            Text(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp)
-                        .padding(bottom = 8.dp),
-                text = "- ${data.author}",
-                textAlign = TextAlign.End,
-                fontSize = MaterialTheme.typography.headlineSmall.fontSize,
-            )
-        }
+                    .padding(top = 16.dp, bottom = 8.dp)
+                    .padding(horizontal = 16.dp),
+            text = data.content,
+            textAlign = TextAlign.Start,
+            style = MaterialTheme.typography.headlineMedium,
+        )
+        Text(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 16.dp),
+            text = "— ${data.author}",
+            textAlign = TextAlign.End,
+            style = MaterialTheme.typography.titleMedium,
+        )
     }
 }
 
