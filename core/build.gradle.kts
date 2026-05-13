@@ -60,6 +60,8 @@ dependencies {
 
     // Room
     implementation(libs.room.runtime)
+    implementation(libs.room.kotlin.extensions)
+    implementation(libs.room.paging3)
     ksp(libs.room.compiler)
     testImplementation(libs.room.testing)
 

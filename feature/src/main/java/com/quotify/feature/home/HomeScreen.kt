@@ -1,5 +1,7 @@
 package com.quotify.feature.home
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -8,81 +10,130 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.paging.LoadState
-import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.itemKey
-import com.quotify.core.navigation.LocalNavigator
-import com.quotify.feature.quoteDetails.QuoteDetailNavKey
+import com.example.quotify.feature.R
+import com.quotify.core.domain.model.Quote
 
 @Composable
-fun HomeScreen(viewModel: HomeViewModel) {
-    val lazyPagingItems = viewModel.pagingDataFlow.collectAsLazyPagingItems()
+fun HomeScreen(
+    lazyPagingItems: LazyPagingItems<Quote>,
+    isOnline: Boolean,
+    onQuoteClick: (String) -> Unit,
+) {
     val isRefreshing = lazyPagingItems.loadState.refresh is LoadState.Loading
 
-    val navigator = LocalNavigator.current
+    val mediatorRefreshFailed =
+        lazyPagingItems.loadState.mediator?.refresh is LoadState.Error
+    val hasCachedItems = lazyPagingItems.itemCount > 0
 
-    PullToRefreshBox(
-        isRefreshing = isRefreshing,
-        onRefresh = { lazyPagingItems.refresh() },
-        modifier =
-            Modifier
-                .fillMaxSize(),
-        state = rememberPullToRefreshState(),
-    ) {
-        val loadState = lazyPagingItems.loadState
-        when (loadState.refresh) {
-            is LoadState.Loading if lazyPagingItems.itemCount == 0 -> {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            }
+    // Banner shows when the user is looking at stale local data:
+    //  - device is offline, OR
+    //  - device is online but the remote refresh failed (server down, 5xx, etc.)
+    // ...and only when there's actually data on screen to label as "cached".
+    val showCachedBanner =
+        shouldShowCachedBanner(
+            isOnline = isOnline,
+            hasCachedItems = hasCachedItems,
+            mediatorRefreshFailed = mediatorRefreshFailed,
+        )
 
-            is LoadState.Error if lazyPagingItems.itemCount == 0 -> {
-                val error = (loadState.refresh as LoadState.Error).error.message
-                Text(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                            .align(Alignment.Center),
-                    text = error ?: "Something went wrong!",
-                    textAlign = TextAlign.Center,
-                )
-            }
+    Column(modifier = Modifier.fillMaxSize()) {
+        AnimatedVisibility(visible = showCachedBanner) {
+            OfflineBanner()
+        }
 
-            else ->
-                LazyColumn(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .padding(8.dp),
-                ) {
-                    items(
-                        count = lazyPagingItems.itemCount,
-                        key = lazyPagingItems.itemKey { it.id },
-                    ) { index ->
-                        lazyPagingItems[index]?.let { quote ->
-                            LazyListItem(
-                                quote.content,
-                                quote.author,
-                                onQuoteClick =
-                                    { navigator.navigate(QuoteDetailNavKey(quote.id)) },
-                            )
-                        }
-                    }
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = { lazyPagingItems.refresh() },
+            modifier = Modifier.fillMaxSize(),
+            state = rememberPullToRefreshState(),
+        ) {
+            when (val refresh = lazyPagingItems.loadState.refresh) {
+                is LoadState.Loading if !hasCachedItems -> {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 }
+
+                is LoadState.Error if !hasCachedItems -> {
+                    Text(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                                .align(Alignment.Center),
+                        text = refresh.error.message ?: "Something went wrong!",
+                        textAlign = TextAlign.Center,
+                    )
+                }
+
+                else ->
+                    QuotesList(
+                        lazyPagingItems = lazyPagingItems,
+                        onQuoteClick = onQuoteClick,
+                    )
+            }
         }
     }
 }
 
 @Composable
-fun LazyListItem(
+private fun QuotesList(
+    lazyPagingItems: LazyPagingItems<Quote>,
+    onQuoteClick: (String) -> Unit,
+) {
+    LazyColumn(
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(8.dp),
+    ) {
+        items(
+            count = lazyPagingItems.itemCount,
+            key = lazyPagingItems.itemKey { it.id },
+        ) { index ->
+            lazyPagingItems[index]?.let { quote ->
+                LazyListItem(
+                    quote = quote.content,
+                    author = quote.author,
+                    onQuoteClick = { onQuoteClick(quote.id) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun OfflineBanner(modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        tonalElevation = 2.dp,
+    ) {
+        Text(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+            text = stringResource(R.string.offline_banner_message),
+            style = MaterialTheme.typography.bodyMedium,
+        )
+    }
+}
+
+@Composable
+private fun LazyListItem(
     quote: String,
     author: String,
     onQuoteClick: () -> Unit,
@@ -117,33 +168,10 @@ fun LazyListItem(
     }
 }
 
-// @Composable
-// fun PullToRefreshBox(
-//     isRefreshing: Boolean,
-//     onRefresh: () -> Unit,
-//     modifier: Modifier = Modifier,
-//     state: PullToRefreshState = rememberPullToRefreshState(),
-//     contentAlignment: Alignment = Alignment.TopStart,
-//     indicator: @Composable BoxScope.() -> Unit = {
-//        Indicator(
-//            modifier = Modifier.align(Alignment.TopCenter),
-//            state = state,
-//            isRefreshing = isRefreshing
-//        )
-//    },
-//     content: @Composable BoxScope.() -> Unit
-// ) {
-//    Box(
-//        modifier.pullToRefresh(state = state, isRefreshing = isRefreshing, onRefresh = onRefresh),
-//        contentAlignment = contentAlignment
-//    ) {
-//        content()
-//        indicator()
-//    }
-// }
-
-// @Preview
-// @Composable
-// fun HomeScreenPreview() {
-//    HomeScreen(PaddingValues(32.dp))
-// }
+// Should be in VM,however, `lazyPagingItems.loading` is only available after `collectAsLazyPagingItems()`,
+// so this is a constraint here, so applied this pragmatic fix
+private fun shouldShowCachedBanner(
+    isOnline: Boolean,
+    hasCachedItems: Boolean,
+    mediatorRefreshFailed: Boolean,
+): Boolean = hasCachedItems && (!isOnline || mediatorRefreshFailed)

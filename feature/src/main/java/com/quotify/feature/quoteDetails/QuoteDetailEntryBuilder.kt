@@ -30,6 +30,7 @@ fun EntryProviderScope<NavKey>.quoteDetailEntries() {
         LaunchedEffect(key.quoteId) {
             viewModel.fetchQuoteDetails(key.quoteId)
         }
+
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
         QuoteDetailScreen(uiState = uiState)

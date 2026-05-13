@@ -1,4 +1,4 @@
-package com.quotify.core.data.network.model
+package com.quotify.core.data.model
 
 data class QuotesListAPIResponse(
     val quotes: List<QuoteAPIResponse>,

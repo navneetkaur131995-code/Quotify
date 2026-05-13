@@ -51,8 +51,10 @@ androidx-compose-paging = { group = "androidx.paging", name = "paging-compose", 
 androidx-compose-paging-runtime = { group = "androidx.paging", name = "paging-runtime", version.ref = "paging" }
 
 # Room database
-room-runtime = { group = "androidx.room", name = "room-ktx", version.ref = "roomVersion" }
+room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "roomVersion" }
+room-kotlin-extensions = { group = "androidx.room", name = "room-ktx", version.ref = "roomVersion" }
 room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "roomVersion" }
+room-paging3 = {group = "androidx.room", name = "room-paging", version.ref = "roomVersion" }
 room-testing = { group = "androidx.room", name = "room-testing", version.ref = "roomVersion" }
 
 # Hilt

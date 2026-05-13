@@ -32,7 +32,7 @@ object NetworkModule {
             .Builder()
             .addInterceptor(
                 HttpLoggingInterceptor().apply {
-                    level = HttpLoggingInterceptor.Level.BODY
+                    level = HttpLoggingInterceptor.Level.BODY // This should be removed in prod. code
                 },
             ).build()
 
