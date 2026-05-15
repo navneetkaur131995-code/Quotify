@@ -33,6 +33,6 @@ fun EntryProviderScope<NavKey>.quoteDetailEntries() {
 
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-        QuoteDetailScreen(uiState = uiState)
+        QuoteDetailScreen(uiState = uiState, onFavoriteToggle = { quote -> viewModel.toggleFavorite(quote) })
     }
 }

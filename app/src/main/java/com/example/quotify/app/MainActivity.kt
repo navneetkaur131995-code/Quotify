@@ -31,7 +31,7 @@ import com.example.quotify.app.navigation.QuotifyNavConfiguration
 import com.example.quotify.app.navigation.QuotifyNavHost
 import com.example.quotify.app.theme.QuotifyTheme
 import com.quotify.core.navigation.LocalNavigator
-import com.quotify.feature.home.HomeNavKey
+import com.quotify.feature.home.HomeNavKeys
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -45,7 +45,7 @@ class MainActivity : ComponentActivity() {
             val backStack =
                 rememberNavBackStack(
                     configuration = QuotifyNavConfiguration,
-                    HomeNavKey.QuoteList, // start destination
+                    HomeNavKeys.QuoteList, // start destination
                 )
             val navigator = remember(backStack) { AppNavigator(backStack) }
 
@@ -81,7 +81,7 @@ class MainActivity : ComponentActivity() {
                             ) {
                                 val currentKey = backStack.lastOrNull()
                                 NavigationBarItem(
-                                    selected = currentKey is HomeNavKey.QuoteList,
+                                    selected = currentKey is HomeNavKeys.QuoteList,
                                     onClick = { navigator.goBack() },
                                     icon = {
                                         Icon(
@@ -92,8 +92,8 @@ class MainActivity : ComponentActivity() {
                                     label = { Text("Home") },
                                 )
                                 NavigationBarItem(
-                                    selected = false, // No Favorites destination yet
-                                    onClick = { /* TODO: navigate when FavoritesNavKey lands */ },
+                                    selected = currentKey is HomeNavKeys.Favorites,
+                                    onClick = { navigator.navigate(HomeNavKeys.Favorites) },
                                     icon = {
                                         Icon(
                                             painter = painterResource(R.drawable.ic_favorite),

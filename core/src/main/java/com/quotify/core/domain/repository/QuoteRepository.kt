@@ -18,5 +18,15 @@ interface QuoteRepository {
 
     // Reads a single quote from Room by ID.
     // Returns DomainResult.Success if found, DomainResult.Failure if not cached.
-    suspend fun getSingleQuote(id: String): DomainResult<Quote>
+    // Flow, because we need to continue monitor the 'Favorite Quote' addition/removal
+    fun getSingleQuoteStream(id: String): Flow<DomainResult<Quote>>
+
+    // Set the quote in the database as 'Favorite'
+    suspend fun addToFavorites(id: String)
+
+    // Reset the quote in the database as 'Not Favorite'
+    suspend fun removeFromFavorites(id: String)
+
+    // Get a list of Favorites from the database
+    suspend fun getFavoriteQuotes(): DomainResult<List<Quote>>
 }

@@ -4,4 +4,5 @@ data class Quote(
     val id: String,
     val content: String,
     val author: String,
+    val favorite: Boolean,
 )

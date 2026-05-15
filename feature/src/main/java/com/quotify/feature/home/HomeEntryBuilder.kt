@@ -1,5 +1,6 @@
 package com.quotify.feature.home
 
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -7,6 +8,8 @@ import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.quotify.core.navigation.LocalNavigator
+import com.quotify.feature.favorites.FavoritesScreen
+import com.quotify.feature.favorites.FavoritesViewModel
 import com.quotify.feature.quoteDetails.QuoteDetailNavKey
 
 /*
@@ -19,7 +22,7 @@ import com.quotify.feature.quoteDetails.QuoteDetailNavKey
 * */
 
 fun EntryProviderScope<NavKey>.homeEntries() {
-    entry<HomeNavKey.QuoteList> {
+    entry<HomeNavKeys.QuoteList> {
         val viewModel: HomeViewModel = hiltViewModel()
 
         val isOnline by viewModel.isOnline.collectAsStateWithLifecycle()
@@ -36,5 +39,16 @@ fun EntryProviderScope<NavKey>.homeEntries() {
             // HomeScreen just calls onQuoteClick(id) — it doesn't know what happens next.
             onQuoteClick = { quoteId -> navigator.navigate(QuoteDetailNavKey(quoteId)) },
         )
+    }
+
+    entry<HomeNavKeys.Favorites> { key ->
+        val viewModel: FavoritesViewModel = hiltViewModel()
+
+        LaunchedEffect(key) {
+            viewModel.getFavoriteQuotes()
+        }
+        val navigator = LocalNavigator.current
+        val uiState = viewModel.uiState.collectAsStateWithLifecycle().value
+        FavoritesScreen(uiState, { navigator.navigate(QuoteDetailNavKey(it)) })
     }
 }

@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
  * no bundles, no NavType, no argument parsing.
  *
  * If the QuoteDetail feature gains a second destination, promote this to a sealed-interface
- * grouping (mirroring `HomeNavKey`) and nest each destination inside it.
+ * grouping (mirroring `HomeNavKeys`) and nest each destination inside it.
  */
 @Serializable
 data class QuoteDetailNavKey(

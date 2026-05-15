@@ -44,13 +44,33 @@ class QuoteRepositoryImpl
                 pagingData.map { quoteEntity -> quoteEntity.toDomain() }
             }
 
-        override suspend fun getSingleQuote(id: String): DomainResult<Quote> =
-            try {
-                val quoteEntity = quotifyDAO.getQuoteById(id)
+        override fun getSingleQuoteStream(id: String): Flow<DomainResult<Quote>> =
+            quotifyDAO.getQuoteById(id).map { quoteEntity ->
                 if (quoteEntity != null) {
                     DomainResult.Success(quoteEntity.toDomain())
                 } else {
                     DomainResult.Failure(Exception("Quote with id $id not found in cache"))
+                }
+            }
+
+        override suspend fun addToFavorites(id: String) {
+            quotifyDAO.addToFavorites(id)
+        }
+
+        override suspend fun removeFromFavorites(id: String) {
+            quotifyDAO.removeFromFavorites(id)
+        }
+
+        override suspend fun getFavoriteQuotes(): DomainResult<List<Quote>> =
+            try {
+                val favoriteQuotes =
+                    quotifyDAO.getFavoriteQuotes().map {
+                        it.toDomain()
+                    }
+                if (favoriteQuotes.isNotEmpty()) {
+                    DomainResult.Success(favoriteQuotes)
+                } else {
+                    DomainResult.Failure(Exception("No favorite quotes found"))
                 }
             } catch (e: Exception) {
                 DomainResult.Failure(e)

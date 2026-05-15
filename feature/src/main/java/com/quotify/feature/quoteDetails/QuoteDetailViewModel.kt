@@ -37,12 +37,20 @@ class QuoteDetailViewModel
             _uiState.value = QuoteDetailUiState.Loading
 
             viewModelScope.launch {
-                _uiState.value =
-                    when (val result = getQuoteDetailUseCase(quoteId)) {
-                        is DomainResult.Success -> QuoteDetailUiState.Success(result.data)
-                        is DomainResult.Failure ->
-                            QuoteDetailUiState.Error(result.error.message ?: "Something went wrong")
-                    }
+                getQuoteDetailUseCase(quoteId).collect { result ->
+                    _uiState.value =
+                        when (result) {
+                            is DomainResult.Success -> QuoteDetailUiState.Success(result.data)
+                            is DomainResult.Failure ->
+                                QuoteDetailUiState.Error(result.error.message ?: "Something went wrong")
+                        }
+                }
+            }
+        }
+
+        fun toggleFavorite(quote: Quote) {
+            viewModelScope.launch {
+                getQuoteDetailUseCase.toggleFavorites(quote.id, quote.favorite)
             }
         }
     }
