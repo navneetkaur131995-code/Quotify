@@ -26,7 +26,8 @@ object DatabaseModule {
                 context,
                 QuotifyDatabase::class.java,
                 "quotify_database",
-            ).build()
+            )
+            .build()
 
     @Provides
     @Singleton // Only one DAO instance as it's just a thin wrapper anyway

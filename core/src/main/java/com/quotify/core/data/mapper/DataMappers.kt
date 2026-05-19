@@ -17,12 +17,5 @@ fun QuoteEntity.toDomain(): Quote =
         id = id,
         content = quote,
         author = author,
-    )
-
-// Network DTO → Domain Model (kept for backward compatibility)
-fun QuoteAPIResponse.toDomain(): Quote =
-    Quote(
-        id = id.toString(),
-        content = quote,
-        author = author,
+        favorite = favorite,
     )

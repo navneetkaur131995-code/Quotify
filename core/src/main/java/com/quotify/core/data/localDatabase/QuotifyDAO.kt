@@ -5,6 +5,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface QuotifyDAO {
@@ -24,5 +25,14 @@ interface QuotifyDAO {
     suspend fun clearAll()
 
     @Query("SELECT * FROM quotes WHERE id = :id")
-    suspend fun getQuoteById(id: String): QuoteEntity?
+    fun getQuoteById(id: String): Flow<QuoteEntity?>
+
+    @Query("UPDATE quotes SET favorite = 1 WHERE id = :id")
+    suspend fun addToFavorites(id: String)
+
+    @Query("UPDATE quotes SET favorite = 0 WHERE id = :id")
+    suspend fun removeFromFavorites(id: String)
+
+    @Query("SELECT * FROM quotes WHERE favorite = 1")
+    suspend fun getFavoriteQuotes(): List<QuoteEntity>
 }

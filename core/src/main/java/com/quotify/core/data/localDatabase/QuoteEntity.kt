@@ -8,4 +8,5 @@ data class QuoteEntity(
     @PrimaryKey val id: String,
     val author: String,
     val quote: String,
+    val favorite: Boolean = false,
 )
