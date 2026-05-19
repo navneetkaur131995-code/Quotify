@@ -18,15 +18,4 @@ class GetQuoteDetailUseCase
         private val quoteRepository: QuoteRepository,
     ) {
         operator fun invoke(quoteId: String): Flow<DomainResult<Quote>> = quoteRepository.getSingleQuoteStream(quoteId)
-
-        suspend fun toggleFavorites(
-            quoteId: String,
-            isFavorite: Boolean,
-        ) {
-            if (isFavorite) {
-                quoteRepository.removeFromFavorites(quoteId)
-            } else {
-                quoteRepository.addToFavorites(quoteId)
-            }
-        }
     }

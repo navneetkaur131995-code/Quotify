@@ -49,6 +49,6 @@ fun EntryProviderScope<NavKey>.homeEntries() {
         }
         val navigator = LocalNavigator.current
         val uiState = viewModel.uiState.collectAsStateWithLifecycle().value
-        FavoritesScreen(uiState, { navigator.navigate(QuoteDetailNavKey(it)) })
+        FavoritesScreen(uiState) { navigator.navigate(QuoteDetailNavKey(it)) }
     }
 }

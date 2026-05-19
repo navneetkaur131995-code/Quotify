@@ -53,12 +53,11 @@ class QuoteRepositoryImpl
                 }
             }
 
-        override suspend fun addToFavorites(id: String) {
-            quotifyDAO.addToFavorites(id)
-        }
-
-        override suspend fun removeFromFavorites(id: String) {
-            quotifyDAO.removeFromFavorites(id)
+        override suspend fun toggleFavoriteQuote(
+            id: String,
+            isFavorite: Boolean,
+        ) {
+            if (isFavorite) quotifyDAO.removeFromFavorites(id) else quotifyDAO.addToFavorites(id)
         }
 
         override suspend fun getFavoriteQuotes(): DomainResult<List<Quote>> =
@@ -67,11 +66,7 @@ class QuoteRepositoryImpl
                     quotifyDAO.getFavoriteQuotes().map {
                         it.toDomain()
                     }
-                if (favoriteQuotes.isNotEmpty()) {
-                    DomainResult.Success(favoriteQuotes)
-                } else {
-                    DomainResult.Failure(Exception("No favorite quotes found"))
-                }
+                DomainResult.Success(favoriteQuotes)
             } catch (e: Exception) {
                 DomainResult.Failure(e)
             }

@@ -82,7 +82,7 @@ class MainActivity : ComponentActivity() {
                                 val currentKey = backStack.lastOrNull()
                                 NavigationBarItem(
                                     selected = currentKey is HomeNavKeys.QuoteList,
-                                    onClick = { navigator.goBack() },
+                                    onClick = { navigator.resetTo(HomeNavKeys.QuoteList) },
                                     icon = {
                                         Icon(
                                             painter = painterResource(R.drawable.ic_quotes_home),

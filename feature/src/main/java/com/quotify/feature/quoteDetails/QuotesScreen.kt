@@ -15,7 +15,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -77,7 +76,12 @@ fun QuoteDetail(
                 .padding(bottom = 16.dp),
         ) {
             val favoriteIcon = if (data.favorite) R.drawable.ic_favorite_selected else R.drawable.ic_favorite
-            val tint = if (data.favorite) Color.Red else MaterialTheme.colorScheme.onSurfaceVariant
+            val tint =
+                if (data.favorite) {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                }
             IconButton(
                 onClick = { onFavoriteClick() },
             ) {

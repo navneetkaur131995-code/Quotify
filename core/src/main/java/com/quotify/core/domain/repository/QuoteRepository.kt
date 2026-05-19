@@ -21,11 +21,11 @@ interface QuoteRepository {
     // Flow, because we need to continue monitor the 'Favorite Quote' addition/removal
     fun getSingleQuoteStream(id: String): Flow<DomainResult<Quote>>
 
-    // Set the quote in the database as 'Favorite'
-    suspend fun addToFavorites(id: String)
-
-    // Reset the quote in the database as 'Not Favorite'
-    suspend fun removeFromFavorites(id: String)
+    // Set the quote in the database as 'Favorite' or Not based on the current status
+    suspend fun toggleFavoriteQuote(
+        id: String,
+        isFavorite: Boolean,
+    )
 
     // Get a list of Favorites from the database
     suspend fun getFavoriteQuotes(): DomainResult<List<Quote>>

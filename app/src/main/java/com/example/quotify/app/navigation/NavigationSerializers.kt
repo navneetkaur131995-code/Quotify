@@ -17,6 +17,7 @@ val QuotifyNavConfiguration: SavedStateConfiguration =
                 polymorphic(NavKey::class) {
                     subclass(HomeNavKeys.QuoteList::class, HomeNavKeys.QuoteList.serializer())
                     subclass(QuoteDetailNavKey::class, QuoteDetailNavKey.serializer())
+                    subclass(HomeNavKeys.Favorites::class, HomeNavKeys.Favorites.serializer())
                 }
             }
     }

@@ -26,7 +26,7 @@ object DatabaseModule {
                 context,
                 QuotifyDatabase::class.java,
                 "quotify_database",
-            ).addMigrations(QuotifyDatabase.MIGRATION_1_2)
+            )
             .build()
 
     @Provides
