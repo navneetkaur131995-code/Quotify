@@ -1,5 +1,10 @@
 package com.quotify.core.data.repository
 
+import androidx.paging.ExperimentalPagingApi
+import androidx.paging.PagingSource
+import androidx.paging.PagingState
+import androidx.paging.RemoteMediator
+import androidx.paging.testing.asSnapshot
 import app.cash.turbine.test
 import com.quotify.core.common.DomainResult
 import com.quotify.core.data.localDatabase.QuoteEntity
@@ -13,10 +18,10 @@ import io.mockk.mockk
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+@OptIn(ExperimentalPagingApi::class)
 class QuoteRepositoryImplTest {
     private val remoteMediator = mockk<QuoteRemoteMediator>(relaxed = true)
     private val dao = mockk<QuotifyDAO>(relaxed = true)
@@ -38,12 +43,49 @@ class QuoteRepositoryImplTest {
         )
 
     // --- getQuotesStream ---
+    @Test
+    fun `getQuotesStream maps QuoteEntity rows from DAO to domain Quote in order`() =
+        runTest {
+            val entities =
+                listOf(
+                    QuoteEntity(
+                        id = "1",
+                        author = "Robert Frost",
+                        quote = "Miles to go before I sleep",
+                        favorite = false,
+                    ),
+                    QuoteEntity(id = "2", author = "Oscar Wilde", quote = "Be yourself", favorite = true),
+                )
+            coEvery { remoteMediator.initialize() } returns RemoteMediator.InitializeAction.SKIP_INITIAL_REFRESH
+            coEvery {
+                remoteMediator.load(any(), any())
+            } returns RemoteMediator.MediatorResult.Success(endOfPaginationReached = true)
+            every { dao.getQuotesPagingSource() } returns FakeQuotesPagingSource(entities)
+
+            val snapshot = repository.getQuotesStream().asSnapshot()
+
+            assertEquals(
+                listOf(
+                    Quote(id = "1", content = "Miles to go before I sleep", author = "Robert Frost", favorite = false),
+                    Quote(id = "2", content = "Be yourself", author = "Oscar Wilde", favorite = true),
+                ),
+                snapshot,
+            )
+        }
 
     @Test
-    fun `getQuotesStream returns a non-null paging flow`() {
-        val flow = repository.getQuotesStream()
-        assertNotNull(flow)
-    }
+    fun `getQuotesStream emits empty list when DAO has no rows`() =
+        runTest {
+            coEvery { remoteMediator.initialize() } returns RemoteMediator.InitializeAction.SKIP_INITIAL_REFRESH
+            coEvery {
+                remoteMediator.load(any(), any())
+            } returns RemoteMediator.MediatorResult.Success(endOfPaginationReached = true)
+            every { dao.getQuotesPagingSource() } returns FakeQuotesPagingSource(emptyList())
+
+            val snapshot = repository.getQuotesStream().asSnapshot()
+
+            assertEquals(emptyList<Quote>(), snapshot)
+        }
 
     // --- getSingleQuoteStream ---
 
@@ -100,8 +142,6 @@ class QuoteRepositoryImplTest {
     @Test
     fun `toggleFavoriteQuote removes from favorites when currently favorited`() =
         runTest {
-            coEvery { dao.removeFromFavorites("1") } returns Unit
-
             repository.toggleFavoriteQuote(id = "1", isFavorite = true)
 
             coVerify(exactly = 1) { dao.removeFromFavorites("1") }
@@ -111,8 +151,6 @@ class QuoteRepositoryImplTest {
     @Test
     fun `toggleFavoriteQuote adds to favorites when not currently favorited`() =
         runTest {
-            coEvery { dao.addToFavorites("1") } returns Unit
-
             repository.toggleFavoriteQuote(id = "1", isFavorite = false)
 
             coVerify(exactly = 1) { dao.addToFavorites("1") }
@@ -162,4 +200,23 @@ class QuoteRepositoryImplTest {
             assertTrue(result is DomainResult.Failure)
             assertEquals(boom, (result as DomainResult.Failure).error)
         }
+}
+
+/**
+ * Deterministic PagingSource for repository tests: returns the given data as a single page
+ * with no further keys. To use it whenever the DAO's PagingSource needs to be controlled in a
+ * unit test as instantiating a real Room PagingSource would require Robolectric + an
+ * in-memory database.
+ */
+private class FakeQuotesPagingSource(
+    private val data: List<QuoteEntity>,
+) : PagingSource<Int, QuoteEntity>() {
+    override fun getRefreshKey(state: PagingState<Int, QuoteEntity>): Int? = null
+
+    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, QuoteEntity> =
+        LoadResult.Page(
+            data = data,
+            prevKey = null,
+            nextKey = null,
+        )
 }

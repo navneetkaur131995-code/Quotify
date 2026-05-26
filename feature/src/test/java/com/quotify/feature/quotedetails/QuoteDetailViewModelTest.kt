@@ -5,39 +5,28 @@ import com.quotify.core.common.DomainResult
 import com.quotify.core.domain.model.Quote
 import com.quotify.core.domain.usecase.GetQuoteDetailUseCase
 import com.quotify.core.domain.usecase.ToggleFavoriteUseCase
+import com.quotify.feature.util.MainDispatcherRule
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
-import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class QuoteDetailsViewModelTest {
+class QuoteDetailViewModelTest {
     private val getQuoteDetailUseCase = mockk<GetQuoteDetailUseCase>()
     private val toggleFavoriteUseCase = mockk<ToggleFavoriteUseCase>(relaxed = true)
 
-    @Before
-    fun setUp() {
-        Dispatchers.setMain(UnconfinedTestDispatcher())
-    }
-
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
-    }
+    @get:Rule
+    val mainDispatcher = MainDispatcherRule()
 
     @Test
     fun `uiState starts at Loading before any id is set`() =

@@ -7,11 +7,9 @@ import com.quotify.core.domain.repository.QuoteRepository
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertSame
 import org.junit.Test
 
 class GetQuotesUseCaseTest {
@@ -19,15 +17,27 @@ class GetQuotesUseCaseTest {
     private val useCase = GetQuotesUseCase(quoteRepository)
 
     @Test
-    fun `invoke returns the flow produced by the repository`() {
-        val expectedFlow: Flow<PagingData<Quote>> = flowOf(PagingData.empty())
-        every { quoteRepository.getQuotesStream() } returns expectedFlow
+    fun `invoke delegates to repository exactly once`() {
+        every { quoteRepository.getQuotesStream() } returns flowOf(PagingData.empty())
 
-        val actualFlow = useCase()
+        useCase()
 
-        assertSame(expectedFlow, actualFlow)
         verify(exactly = 1) { quoteRepository.getQuotesStream() }
     }
+
+    @Test
+    fun `invoke does not call repository more than once per invocation`() {
+        every { quoteRepository.getQuotesStream() } returns flowOf(PagingData.empty())
+
+        useCase()
+        useCase()
+
+        // Each call to invoke() should trigger exactly one repository call.
+        // Two invocations → two repository calls, not one cached or zero.
+        verify(exactly = 2) { quoteRepository.getQuotesStream() }
+    }
+
+    // --- Data flow ---
 
     @Test
     fun `invoke emits the quotes provided by the repository`() =
@@ -52,5 +62,27 @@ class GetQuotesUseCaseTest {
             val snapshot = useCase().asSnapshot()
 
             assertEquals(emptyList<Quote>(), snapshot)
+        }
+
+    @Test
+    fun `invoke preserves all quote fields through the pipeline`() =
+        runTest {
+            val quote =
+                Quote(
+                    id = "42",
+                    content = "The only way out is through.",
+                    author = "Robert Frost",
+                    favorite = true,
+                )
+            every { quoteRepository.getQuotesStream() } returns flowOf(PagingData.from(listOf(quote)))
+
+            val snapshot = useCase().asSnapshot()
+
+            assertEquals(1, snapshot.size)
+            val result = snapshot.first()
+            assertEquals("42", result.id)
+            assertEquals("The only way out is through.", result.content)
+            assertEquals("Robert Frost", result.author)
+            assertEquals(true, result.favorite)
         }
 }

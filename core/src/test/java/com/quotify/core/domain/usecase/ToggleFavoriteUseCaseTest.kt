@@ -12,33 +12,19 @@ class ToggleFavoriteUseCaseTest {
     private val useCase = ToggleFavoriteUseCase(quoteRepository)
 
     @Test
-    fun `invoke delegates to repository with isFavorite true`() =
+    fun `invoke forwards quoteId and isFavorite=true to repository unchanged`() =
         runTest {
-            coEvery { quoteRepository.toggleFavoriteQuote(any(), any()) } returns Unit
-
-            useCase(quoteId = "42", isFavorite = true)
-
-            coVerify(exactly = 1) { quoteRepository.toggleFavoriteQuote("42", true) }
-        }
-
-    @Test
-    fun `invoke delegates to repository with isFavorite false`() =
-        runTest {
-            coEvery { quoteRepository.toggleFavoriteQuote(any(), any()) } returns Unit
-
-            useCase(quoteId = "42", isFavorite = false)
-
-            coVerify(exactly = 1) { quoteRepository.toggleFavoriteQuote("42", false) }
-        }
-
-    @Test
-    fun `invoke forwards the exact quoteId without modification`() =
-        runTest {
-            coEvery { quoteRepository.toggleFavoriteQuote(any(), any()) } returns Unit
-
             useCase(quoteId = "quote-abc-123", isFavorite = true)
 
             coVerify(exactly = 1) { quoteRepository.toggleFavoriteQuote("quote-abc-123", true) }
+        }
+
+    @Test
+    fun `invoke forwards quoteId and isFavorite=false to repository unchanged`() =
+        runTest {
+            useCase(quoteId = "quote-abc-123", isFavorite = false)
+
+            coVerify(exactly = 1) { quoteRepository.toggleFavoriteQuote("quote-abc-123", false) }
         }
 
     @Test(expected = IllegalStateException::class)

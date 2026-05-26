@@ -1,4 +1,4 @@
-package com.quotify.core.util
+package com.quotify.feature.util
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -7,13 +7,14 @@ import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.junit.rules.TestWatcher
+import org.junit.runner.Description
 
 class MainDispatcherRule(
     val testDispatcher: TestDispatcher = StandardTestDispatcher(),
 ) : TestWatcher() {
     @OptIn(ExperimentalCoroutinesApi::class)
-    override fun starting(description: org.junit.runner.Description?) = Dispatchers.setMain(testDispatcher)
+    override fun starting(description: Description?) = Dispatchers.setMain(testDispatcher)
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    override fun finished(description: org.junit.runner.Description?) = Dispatchers.resetMain()
+    override fun finished(description: Description?) = Dispatchers.resetMain()
 }

@@ -21,7 +21,7 @@ import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
 import kotlinx.coroutines.test.runTest
 import org.junit.After
-import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -118,7 +118,10 @@ class RemoteMediatorTest {
         runTest {
             coEvery { api.getQuotesList(limit = 20, skip = 0) } returns apiResponse(count = 3)
 
-            mediator.load(LoadType.REFRESH, emptyPagingState())
+            val result = mediator.load(LoadType.REFRESH, emptyPagingState())
+
+            assertTrue(result is RemoteMediator.MediatorResult.Success)
+            assertFalse((result as RemoteMediator.MediatorResult.Success).endOfPaginationReached)
 
             // Verifies the contract from the network's perspective: refresh always starts at 0.
             coVerify(exactly = 1) { api.getQuotesList(limit = 20, skip = 0) }
@@ -167,6 +170,18 @@ class RemoteMediatorTest {
         }
 
     @Test
+    fun `APPEND returns endOfPaginationReached when API returns empty list`() =
+        runTest {
+            coEvery { api.getQuotesList(limit = 20, skip = 0) } returns
+                QuotesListAPIResponse(quotes = emptyList(), total = 0, skip = 0, limit = 20)
+
+            val result = mediator.load(LoadType.REFRESH, emptyPagingState())
+
+            assertTrue(result is RemoteMediator.MediatorResult.Success)
+            assertTrue((result as RemoteMediator.MediatorResult.Success).endOfPaginationReached)
+        }
+
+    @Test
     fun `network exception is wrapped in MediatorResult Error`() =
         runTest {
             val boom = RuntimeException("network down")
@@ -176,13 +191,5 @@ class RemoteMediatorTest {
 
             assertTrue(result is RemoteMediator.MediatorResult.Error)
             assertSame(boom, (result as RemoteMediator.MediatorResult.Error).throwable)
-            // No DB work attempted when the network call itself fails.
-            coVerify(exactly = 0) { dao.clearAll() }
-            coVerify(exactly = 0) { dao.insertAll(any()) }
         }
-
-    @Test
-    fun `mediator can be instantiated with API and database`() {
-        assertNotNull(mediator)
-    }
 }

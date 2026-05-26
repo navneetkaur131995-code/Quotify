@@ -4,7 +4,6 @@ import com.quotify.core.data.localDatabase.QuoteEntity
 import com.quotify.core.data.model.QuoteAPIResponse
 import com.quotify.core.domain.model.Quote
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotEquals
 import org.junit.Test
 
 class QuoteMapperTest {
@@ -75,30 +74,6 @@ class QuoteMapperTest {
             )
 
         assertEquals("toDomain should map favorite = false correctly", expectedDomain, quoteEntity.toDomain())
-    }
-
-    @Test
-    fun `toDomain does not match unrelated Quote object`() {
-        val quoteEntity =
-            QuoteEntity(
-                id = "2",
-                author = "Unknown",
-                quote = "Hello World",
-            )
-
-        val expectedDomain =
-            Quote(
-                id = "1",
-                content = "Hello World",
-                author = "Unknown",
-                favorite = true,
-            )
-
-        assertNotEquals(
-            "toDomain should produce a domain model that accurately reflects the entity",
-            expectedDomain,
-            quoteEntity.toDomain(),
-        )
     }
 
     @Test

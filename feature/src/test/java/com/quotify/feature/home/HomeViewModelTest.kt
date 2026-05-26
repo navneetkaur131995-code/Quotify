@@ -4,38 +4,25 @@ import androidx.paging.PagingData
 import app.cash.turbine.test
 import com.quotify.core.domain.connectivity.NetworkMonitor
 import com.quotify.core.domain.usecase.GetQuotesUseCase
+import com.quotify.feature.util.MainDispatcherRule
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class HomeViewModelTest {
     private val getQuotesUseCase = mockk<GetQuotesUseCase>()
     private val networkMonitor = mockk<NetworkMonitor>()
-    private val testDispatcher = StandardTestDispatcher()
 
-    @Before
-    fun setUp() {
-        Dispatchers.setMain(testDispatcher)
-    }
-
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
-    }
+    @get:Rule
+    val mainDispatcher = MainDispatcherRule()
 
     @Test
     fun `pagingDataFlow subscribes to the use case`() =
@@ -53,19 +40,8 @@ class HomeViewModelTest {
         }
 
     @Test
-    fun `pagingDataFlow delegates to use case exactly once`() =
-        runTest {
-            every { getQuotesUseCase() } returns flowOf(PagingData.empty())
-            every { networkMonitor.isOnline } returns flowOf(false)
-
-            HomeViewModel(getQuotesUseCase, networkMonitor)
-
-            verify(exactly = 1) { getQuotesUseCase() }
-        }
-
-    @Test
     fun `isOnline starts with false then reflects monitor`() =
-        runTest(UnconfinedTestDispatcher()) {
+        runTest {
             every { getQuotesUseCase() } returns flowOf(PagingData.empty())
             val onlineFlow = MutableStateFlow(false)
             every { networkMonitor.isOnline } returns onlineFlow

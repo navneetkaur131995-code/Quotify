@@ -4,34 +4,23 @@ import app.cash.turbine.test
 import com.quotify.core.common.DomainResult
 import com.quotify.core.domain.model.Quote
 import com.quotify.core.domain.usecase.GetFavoriteQuotesUseCase
+import com.quotify.feature.util.MainDispatcherRule
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
-import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class FavoritesViewModelTest {
     private val getFavoriteQuotesUseCase = mockk<GetFavoriteQuotesUseCase>()
 
-    @Before
-    fun setUp() {
-        Dispatchers.setMain(UnconfinedTestDispatcher())
-    }
-
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
-    }
+    @get:Rule
+    val mainDispatcher = MainDispatcherRule()
 
     @Test
     fun `uiState starts in Loading`() =
@@ -59,9 +48,12 @@ class FavoritesViewModelTest {
 
                 viewModel.getFavoriteQuotes()
 
-                // Reaches Success — on UnconfinedTestDispatcher the intermediate Loading set
-                // by getFavoriteQuotes() collapses with the existing Loading, so only the
-                // final Success transition shows up as a new emission.
+                // Consume the Loading reset that getFavoriteQuotes() sets synchronously
+                assertEquals(FavoritesUiState.Loading, awaitItem())
+
+                // getFavoriteQuotes() sets Loading synchronously, but StateFlow deduplicates
+                // equal consecutive values — since we're already in Loading, no new emission fires.
+                // The next distinct emission is Success.
                 assertEquals(FavoritesUiState.Success(favorites), awaitItem())
                 cancelAndIgnoreRemainingEvents()
             }
