@@ -10,7 +10,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import com.quotify.core.navigation.LocalNavigator
 import com.quotify.feature.favorites.FavoritesScreen
 import com.quotify.feature.favorites.FavoritesViewModel
-import com.quotify.feature.quoteDetails.QuoteDetailNavKey
+import com.quotify.feature.quotedetails.QuoteDetailNavKey
 
 /*
 *  Extension function the app's entryProvider DSL calls.

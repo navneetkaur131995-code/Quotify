@@ -1,4 +1,4 @@
-package com.quotify.feature.quoteDetails
+package com.quotify.feature.quotedetails
 
 import com.quotify.core.navigation.QuotifyNavKey
 import kotlinx.serialization.Serializable

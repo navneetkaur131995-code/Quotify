@@ -1,4 +1,4 @@
-package com.quotify.feature.quoteDetails
+package com.quotify.feature.quotedetails
 
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel

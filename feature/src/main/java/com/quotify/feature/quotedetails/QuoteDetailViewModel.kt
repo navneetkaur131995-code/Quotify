@@ -1,4 +1,4 @@
-package com.quotify.feature.quoteDetails
+package com.quotify.feature.quotedetails
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

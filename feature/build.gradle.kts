@@ -67,6 +67,7 @@ dependencies {
     // Paging with compose
     implementation(libs.androidx.compose.paging)
     implementation(libs.androidx.compose.paging.runtime)
+    testImplementation(libs.androidx.paging.testing)
 
     // Hilt compose navigation
     implementation(libs.androidx.hilt.navigation)
@@ -86,4 +87,7 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+    testImplementation(libs.mockk)
+    testImplementation(libs.turbine)
+    testImplementation(libs.kotlin.coroutines.test)
 }

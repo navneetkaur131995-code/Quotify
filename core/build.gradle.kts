@@ -51,6 +51,7 @@ dependencies {
 
     // Kotlin Coroutines
     implementation(libs.kotlin.coroutines)
+    testImplementation(libs.kotlin.coroutines.test)
 
     // Retrofit + OKHttp
     implementation(libs.squareup.retrofit)
@@ -73,6 +74,7 @@ dependencies {
     // Paging
     implementation(libs.androidx.compose.paging)
     implementation(libs.androidx.compose.paging.runtime)
+    testImplementation(libs.androidx.paging.testing)
 
     // Navigation3
     implementation(libs.androidx.navigation3.runtime)
@@ -81,4 +83,6 @@ dependencies {
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
+    testImplementation(libs.mockk)
+    testImplementation(libs.turbine)
 }

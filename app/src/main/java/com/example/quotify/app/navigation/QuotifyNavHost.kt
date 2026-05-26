@@ -12,7 +12,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.quotify.feature.home.homeEntries
-import com.quotify.feature.quoteDetails.quoteDetailEntries
+import com.quotify.feature.quotedetails.quoteDetailEntries
 
 @Composable
 fun QuotifyNavHost(
