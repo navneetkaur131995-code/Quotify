@@ -1,6 +1,7 @@
 <resources>
-
     <string name="offline_banner_message">You\'re offline. Showing cached quotes.</string>
     <string name="favorites_empty_message">No favorite quotes yet.</string>
-
+    <string name="cd_toggle_favorite">Toggle favorite</string>
+    <string name="error_generic">Something went wrong!</string>
+    <string name="quote_attribution">— %1$s</string>
 </resources>

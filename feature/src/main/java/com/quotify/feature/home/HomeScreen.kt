@@ -72,7 +72,7 @@ fun HomeScreen(
                                 .fillMaxWidth()
                                 .padding(16.dp)
                                 .align(Alignment.Center),
-                        text = refresh.error.message ?: "Something went wrong!",
+                        text = refresh.error.message ?: stringResource(R.string.error_generic),
                         textAlign = TextAlign.Center,
                     )
                 }
@@ -162,7 +162,7 @@ private fun LazyListItem(
                     .fillMaxWidth()
                     .padding(horizontal = 8.dp)
                     .padding(bottom = 4.dp),
-            text = "-$author",
+            text = stringResource(R.string.quote_attribution, author),
             textAlign = TextAlign.End,
         )
     }

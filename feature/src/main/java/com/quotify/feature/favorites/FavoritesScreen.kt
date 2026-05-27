@@ -1,5 +1,12 @@
 package com.quotify.feature.favorites
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,6 +19,7 @@ import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -20,6 +28,18 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.quotify.feature.R
 import com.quotify.core.domain.model.Quote
+
+private val FavoritesAnimations =
+    slideInVertically(
+        animationSpec =
+            tween(
+                durationMillis = 500,
+                easing = LinearOutSlowInEasing,
+            ),
+    ) { -500 } + expandVertically() +
+        fadeIn(
+            animationSpec = tween(durationMillis = 500),
+        )
 
 @Composable
 fun FavoritesScreen(
@@ -78,8 +98,19 @@ private fun FavoritesList(
             items = items,
             key = { quote -> quote.id },
         ) { quote ->
-            FavoritesListItem(quote = quote) {
-                onFavoriteClick(quote.id)
+            val visibleState =
+                remember(quote.id) {
+                    MutableTransitionState(false).apply {
+                        targetState = true
+                    }
+                }
+            AnimatedVisibility(
+                visibleState = visibleState,
+                enter = FavoritesAnimations,
+            ) {
+                FavoritesListItem(quote = quote) {
+                    onFavoriteClick(quote.id)
+                }
             }
         }
     }
@@ -114,7 +145,7 @@ private fun FavoritesListItem(
                     .fillMaxWidth()
                     .padding(horizontal = 8.dp)
                     .padding(bottom = 4.dp),
-            text = "- ${quote.author}",
+            text = stringResource(R.string.quote_attribution, quote.author),
             textAlign = TextAlign.End,
         )
     }
