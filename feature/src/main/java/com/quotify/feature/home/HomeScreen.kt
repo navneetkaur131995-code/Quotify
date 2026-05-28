@@ -29,7 +29,7 @@ import com.quotify.core.domain.model.Quote
 @Composable
 fun HomeScreen(
     lazyPagingItems: LazyPagingItems<Quote>,
-    isOnline: Boolean,
+    isOnline: Boolean?,
     onQuoteClick: (String) -> Unit,
 ) {
     val isRefreshing = lazyPagingItems.loadState.refresh is LoadState.Loading
@@ -38,10 +38,9 @@ fun HomeScreen(
         lazyPagingItems.loadState.mediator?.refresh is LoadState.Error
     val hasCachedItems = lazyPagingItems.itemCount > 0
 
-    // Banner shows when the user is looking at stale local data:
-    //  - device is offline, OR
-    //  - device is online but the remote refresh failed (server down, 5xx, etc.)
-    // ...and only when there's actually data on screen to label as "cached".
+    // Banner: only show when we KNOW the device is offline or remote refresh failed,
+    // AND there's cached data to label as stale. Null isOnline (initial reading) is
+    // treated as "no reason to show the banner yet" — prevents a cold-start flash.
     val showCachedBanner =
         shouldShowCachedBanner(
             isOnline = isOnline,
@@ -61,11 +60,10 @@ fun HomeScreen(
             state = rememberPullToRefreshState(),
         ) {
             when (val refresh = lazyPagingItems.loadState.refresh) {
-                is LoadState.Loading if !hasCachedItems -> {
+                is LoadState.Loading if !hasCachedItems ->
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                }
 
-                is LoadState.Error if !hasCachedItems -> {
+                is LoadState.Error if !hasCachedItems ->
                     Text(
                         modifier =
                             Modifier
@@ -75,7 +73,6 @@ fun HomeScreen(
                         text = refresh.error.message ?: stringResource(R.string.error_generic),
                         textAlign = TextAlign.Center,
                     )
-                }
 
                 else ->
                     QuotesList(
@@ -166,10 +163,10 @@ private fun LazyListItem(
     }
 }
 
-// Should be in VM,however, `lazyPagingItems.loading` is only available after `collectAsLazyPagingItems()`,
-// so this is a constraint here, so applied this pragmatic fix
+// Lives at file scope rather than in the VM because it needs the paging loadState,
+// which is only resolvable from the LazyPagingItems holder in the Compose layer.
 private fun shouldShowCachedBanner(
-    isOnline: Boolean,
+    isOnline: Boolean?,
     hasCachedItems: Boolean,
     mediatorRefreshFailed: Boolean,
-): Boolean = hasCachedItems && (!isOnline || mediatorRefreshFailed)
+): Boolean = hasCachedItems && (isOnline == false || mediatorRefreshFailed)

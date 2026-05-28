@@ -8,12 +8,15 @@ import com.quotify.core.domain.usecase.GetQuoteDetailUseCase
 import com.quotify.core.domain.usecase.ToggleFavoriteUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -30,6 +33,14 @@ sealed interface QuoteDetailUiState {
     ) : QuoteDetailUiState
 }
 
+// One-shot effects (snackbars, toasts, navigation). Modeled as a Channel so events
+// aren't lost across configuration changes and aren't re-delivered on re-collection.
+sealed interface QuoteDetailEffect {
+    data class ShowError(
+        val message: String,
+    ) : QuoteDetailEffect
+}
+
 @HiltViewModel
 class QuoteDetailViewModel
     @Inject
@@ -37,47 +48,18 @@ class QuoteDetailViewModel
         private val getQuoteDetailUseCase: GetQuoteDetailUseCase,
         private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
     ) : ViewModel() {
-        // WHY MutableStateFlow<String?> instead of a plain String parameter?
-        //
-        // Navigation3 constructs the ViewModel before the entry builder runs, so there
-        // is no constructor slot to pass the quoteId at creation time. We need a way to
-        // feed the ID into the reactive pipeline *after* the ViewModel exists.
-        // A MutableStateFlow<String?> acts as that bridge: it starts null (no ID yet),
-        // and the entry builder emits the real ID exactly once via setQuoteId().
-        // The rest of the pipeline reacts to that emission automatically.
+        // Navigation3 constructs the ViewModel before the entry builder runs, so we can't
+        // receive the quoteId as a constructor argument. A nullable MutableStateFlow acts
+        // as the bridge: starts null, set exactly once when the entry builder fires its
+        // LaunchedEffect, and the reactive pipeline below reacts.
         private val quoteIdFlow = MutableStateFlow<String?>(null)
 
-        // WHY this pipeline instead of viewModelScope.launch { flow.collect { ... } }?
-        //
-        // The old approach — launch { getQuoteDetailUseCase(id).collect { _uiState.value = ... } }
-        // — had a subtle but serious bug: if fetchQuoteDetails() was called a second time
-        // (e.g. after an error, or if the entry builder recomposed), a *second* coroutine
-        // was launched while the first was still collecting the infinite Room Flow.
-        // Two coroutines now race to write _uiState, producing unpredictable UI updates.
-        //
-        // This pipeline fixes that with three operators working together:
-        //
-        // 1. filterNotNull()
-        //    Skips the initial null value so the use case is never called with an empty ID.
-        //    The UI stays on Loading until a real ID arrives.
-        //
-        // 2. flatMapLatest { id -> getQuoteDetailUseCase(id) }
-        //    For each new ID emitted by quoteIdFlow, this cancels the previous inner Flow
-        //    and starts a new one. Since setQuoteId() is a no-op when the ID hasn't changed,
-        //    in practice only one inner Flow ever runs at a time — but flatMapLatest gives
-        //    us that guarantee structurally, not by relying on a manual guard.
-        //
-        // 3. stateIn(WhileSubscribed(5_000L), initialValue = Loading)
-        //    Converts the cold pipeline into a hot StateFlow that the UI can collect.
-        //    - initialValue = Loading means the UI always has a valid state to render,
-        //      even before the first Room emission arrives.
-        //    - WhileSubscribed(5_000L) keeps the upstream Flow (and the Room query) alive
-        //      for 5 seconds after the last subscriber disappears. This tolerates screen
-        //      rotation and back-stack transitions without tearing down and restarting the
-        //      database query — the user never sees a loading flash on return.
-        //    - When all subscribers are gone for longer than 5 seconds (e.g. the user
-        //      navigated away permanently), the coroutine is cancelled and Room stops
-        //      watching the row, freeing resources.
+        // filterNotNull → flatMapLatest → stateIn:
+        // - filterNotNull skips the initial null so the use case isn't called with an empty id.
+        // - flatMapLatest cancels any prior inner Flow when the id changes, guaranteeing
+        //   at most one active Room collection — structurally, not via manual guards.
+        // - stateIn(WhileSubscribed 5s) keeps the Room query alive across rotation/back-stack
+        //   churn without re-issuing the query.
         @OptIn(ExperimentalCoroutinesApi::class)
         val uiState: StateFlow<QuoteDetailUiState> =
             quoteIdFlow
@@ -91,21 +73,36 @@ class QuoteDetailViewModel
                     }
                 }.stateIn(
                     scope = viewModelScope,
-                    started = SharingStarted.WhileSubscribed(5_000L),
+                    started = SharingStarted.WhileSubscribed(SUBSCRIPTION_TIMEOUT_MS),
                     initialValue = QuoteDetailUiState.Loading,
                 )
 
+        // Channel (not SharedFlow) because effects are point-in-time events: each one is
+        // consumed exactly once. A SharedFlow would re-deliver to late subscribers.
+        private val _effects = Channel<QuoteDetailEffect>(Channel.BUFFERED)
+        val effects: Flow<QuoteDetailEffect> = _effects.receiveAsFlow()
+
         fun setQuoteId(quoteId: String) {
-            // No-op if the ID is already set to the same value.
-            // Prevents flatMapLatest from cancelling and restarting the Room query
-            // on every recomposition of the entry builder.
+            // No-op when unchanged so flatMapLatest doesn't restart Room on re-entry.
             if (quoteIdFlow.value == quoteId) return
             quoteIdFlow.value = quoteId
         }
 
         fun toggleFavorite(quote: Quote) {
             viewModelScope.launch {
-                toggleFavoriteUseCase(quote.id, quote.favorite)
+                when (val result = toggleFavoriteUseCase(quote.id)) {
+                    is DomainResult.Success -> Unit // Room flow re-emits with the new favorite state.
+                    is DomainResult.Failure ->
+                        _effects.send(
+                            QuoteDetailEffect.ShowError(
+                                result.error.message ?: "Failed to update favorite",
+                            ),
+                        )
+                }
             }
+        }
+
+        private companion object {
+            const val SUBSCRIPTION_TIMEOUT_MS = 5_000L
         }
     }

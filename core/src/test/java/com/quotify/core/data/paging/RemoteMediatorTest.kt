@@ -8,11 +8,11 @@ import androidx.paging.PagingState
 import androidx.paging.RemoteMediator
 import androidx.room.withTransaction
 import com.quotify.core.data.localDatabase.QuoteEntity
-import com.quotify.core.data.localDatabase.QuotifyDAO
+import com.quotify.core.data.localDatabase.QuotifyDao
 import com.quotify.core.data.localDatabase.QuotifyDatabase
 import com.quotify.core.data.model.QuoteAPIResponse
 import com.quotify.core.data.model.QuotesListAPIResponse
-import com.quotify.core.data.network.APIService
+import com.quotify.core.data.network.ApiService
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -33,31 +33,35 @@ import org.junit.Test
  * The mediator's `database.withTransaction { ... }` block is a Room top-level suspend
  * extension. Reliably executing that block from a JVM unit test would require Robolectric
  * + an in-memory Room database, which is overkill for what is essentially a pass-through
- * to clearAll/insertAll. Instead, we cover:
+ * to clearNonFavorites/insertAll. Instead, we cover:
  *
- *   - The branches that complete BEFORE the transaction (PREPEND short-circuit, network
- *     errors,  API skip-calculation for REFRESH and APPEND).
- *   - Verifying which API method is called and with what args — the contract of the
- *     mediator from the network's perspective.
+ *   - Branches that complete BEFORE the transaction (PREPEND short-circuit, network
+ *     errors, API skip-calculation, REFRESH-uses-initialLoadSize-vs-APPEND-uses-pageSize).
+ *   - Verifying which API method is called and with what args — the contract from the
+ *     network's perspective.
  *
- * The "wipe-on-refresh + insertAll" Room interaction is left to instrumented tests, since
- * it depends on Room behavior we cannot meaningfully unit-test in isolation.
+ * The "wipe-on-refresh + insertAll + restore favorites" Room interaction is left to
+ * instrumented tests, since it depends on Room behavior we cannot meaningfully unit-test
+ * in isolation.
  */
 @OptIn(ExperimentalPagingApi::class)
 class RemoteMediatorTest {
-    private val api = mockk<APIService>()
-    private val dao = mockk<QuotifyDAO>(relaxed = true)
+    private val api = mockk<ApiService>()
+    private val dao = mockk<QuotifyDao>(relaxed = true)
     private val database = mockk<QuotifyDatabase>(relaxed = true)
     private lateinit var mediator: QuoteRemoteMediator
 
-    private val pagingConfig = PagingConfig(pageSize = 20, prefetchDistance = 5, enablePlaceholders = false)
+    private val pagingConfig =
+        PagingConfig(
+            pageSize = PagingConstants.PAGE_SIZE,
+            prefetchDistance = PagingConstants.PREFETCH_DISTANCE,
+            enablePlaceholders = false,
+        )
+    private val initialLoadSize = pagingConfig.initialLoadSize
 
     @Before
     fun setUp() {
-        every { database.quotifyDAO() } returns dao
-        // Static mock so the real Room implementation isn't invoked. Tests that depend on
-        // the block actually running its body are excluded from this suite (see file-level
-        // note above).
+        every { database.quotifyDao() } returns dao
         mockkStatic("androidx.room.RoomDatabaseKt")
         coEvery { database.withTransaction(any<suspend () -> Any?>()) } returns Unit
         mediator = QuoteRemoteMediator(api, database)
@@ -100,7 +104,7 @@ class RemoteMediatorTest {
             quotes = (1..count).map { QuoteAPIResponse(id = it, quote = "q$it", author = "a$it") },
             total = 100,
             skip = skip,
-            limit = 20,
+            limit = PagingConstants.PAGE_SIZE,
         )
 
     @Test
@@ -114,35 +118,36 @@ class RemoteMediatorTest {
         }
 
     @Test
-    fun `REFRESH fetches with skip zero`() =
+    fun `REFRESH fetches with initialLoadSize and skip zero`() =
         runTest {
-            coEvery { api.getQuotesList(limit = 20, skip = 0) } returns apiResponse(count = 3)
+            coEvery { api.getQuotesList(limit = initialLoadSize, skip = 0) } returns apiResponse(count = 3)
 
             val result = mediator.load(LoadType.REFRESH, emptyPagingState())
 
             assertTrue(result is RemoteMediator.MediatorResult.Success)
             assertFalse((result as RemoteMediator.MediatorResult.Success).endOfPaginationReached)
 
-            // Verifies the contract from the network's perspective: refresh always starts at 0.
-            coVerify(exactly = 1) { api.getQuotesList(limit = 20, skip = 0) }
+            // initialLoadSize avoids the three-round-trips problem on cold start.
+            coVerify(exactly = 1) { api.getQuotesList(limit = initialLoadSize, skip = 0) }
         }
 
     @Test
-    fun `APPEND fetches with skip equal to the total items already loaded`() =
+    fun `APPEND fetches with pageSize and skip equal to total items already loaded`() =
         runTest {
-            coEvery { api.getQuotesList(limit = 20, skip = 40) } returns apiResponse(count = 20, skip = 40)
+            coEvery {
+                api.getQuotesList(limit = PagingConstants.PAGE_SIZE, skip = 40)
+            } returns apiResponse(count = PagingConstants.PAGE_SIZE, skip = 40)
 
             val state = pagingStateWithItems(itemCount = 40)
             mediator.load(LoadType.APPEND, state)
 
-            // APPEND skip == state.pages.sumOf { it.data.size }
-            coVerify(exactly = 1) { api.getQuotesList(limit = 20, skip = 40) }
+            // APPEND skip == state.pages.sumOf { it.data.size }; APPEND uses normal pageSize.
+            coVerify(exactly = 1) { api.getQuotesList(limit = PagingConstants.PAGE_SIZE, skip = 40) }
         }
 
     @Test
     fun `APPEND with multiple loaded pages sums all page sizes for skip`() =
         runTest {
-            // Two pages of 20 items each — total 40 → next skip should be 40, not 2 (pages).
             val page1 =
                 PagingSource.LoadResult.Page<Int, QuoteEntity>(
                     data = (1..20).map { QuoteEntity(id = "$it", author = "a", quote = "q") },
@@ -162,18 +167,20 @@ class RemoteMediatorTest {
                     config = pagingConfig,
                     leadingPlaceholderCount = 0,
                 )
-            coEvery { api.getQuotesList(limit = 20, skip = 40) } returns apiResponse(count = 20, skip = 40)
+            coEvery {
+                api.getQuotesList(limit = PagingConstants.PAGE_SIZE, skip = 40)
+            } returns apiResponse(count = PagingConstants.PAGE_SIZE, skip = 40)
 
             mediator.load(LoadType.APPEND, state)
 
-            coVerify(exactly = 1) { api.getQuotesList(limit = 20, skip = 40) }
+            coVerify(exactly = 1) { api.getQuotesList(limit = PagingConstants.PAGE_SIZE, skip = 40) }
         }
 
     @Test
-    fun `APPEND returns endOfPaginationReached when API returns empty list`() =
+    fun `REFRESH returns endOfPaginationReached when API returns empty list`() =
         runTest {
-            coEvery { api.getQuotesList(limit = 20, skip = 0) } returns
-                QuotesListAPIResponse(quotes = emptyList(), total = 0, skip = 0, limit = 20)
+            coEvery { api.getQuotesList(limit = initialLoadSize, skip = 0) } returns
+                QuotesListAPIResponse(quotes = emptyList(), total = 0, skip = 0, limit = PagingConstants.PAGE_SIZE)
 
             val result = mediator.load(LoadType.REFRESH, emptyPagingState())
 

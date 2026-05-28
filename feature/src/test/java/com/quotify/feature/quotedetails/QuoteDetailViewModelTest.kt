@@ -14,6 +14,7 @@ import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -129,31 +130,51 @@ class QuoteDetailViewModelTest {
 
             val viewModel = QuoteDetailViewModel(getQuoteDetailUseCase, toggleFavoriteUseCase)
 
-            // Need an active subscriber so stateIn(WhileSubscribed) starts collecting upstream.
             viewModel.uiState.test {
-                // Drain initial Loading.
+                assertEquals(QuoteDetailUiState.Loading, awaitItem())
+                viewModel.setQuoteId("1")
+                // Awaiting Success forces flatMapLatest to actually run with the new id —
+                // without this the StandardTestDispatcher never drives the emission and
+                // the verify below would see zero invocations.
                 awaitItem()
                 viewModel.setQuoteId("1")
                 viewModel.setQuoteId("1")
-                viewModel.setQuoteId("1")
-                // Drain the Success emission so the test doesn't see "unconsumed events".
                 cancelAndIgnoreRemainingEvents()
             }
 
-            // Use case is invoked exactly once because the ID never actually changes.
+            // Use case invoked exactly once because the id never actually changes.
             verify(exactly = 1) { getQuoteDetailUseCase("1") }
         }
 
     @Test
-    fun `toggleFavorite delegates to ToggleFavoriteUseCase with quote id and current state`() =
+    fun `toggleFavorite delegates to ToggleFavoriteUseCase with quote id`() =
         runTest {
+            coEvery { toggleFavoriteUseCase("42") } returns DomainResult.Success(Unit)
             val viewModel = QuoteDetailViewModel(getQuoteDetailUseCase, toggleFavoriteUseCase)
-
             val quote = Quote(id = "42", content = "c", author = "a", favorite = true)
-            coEvery { toggleFavoriteUseCase("42", true) } returns Unit
 
             viewModel.toggleFavorite(quote)
+            // Drive the viewModelScope.launch on the test dispatcher so the use case
+            // actually gets invoked before we verify.
+            advanceUntilIdle()
 
-            coVerify(exactly = 1) { toggleFavoriteUseCase("42", true) }
+            coVerify(exactly = 1) { toggleFavoriteUseCase("42") }
+        }
+
+    @Test
+    fun `toggleFavorite emits ShowError effect on Failure`() =
+        runTest {
+            coEvery { toggleFavoriteUseCase("42") } returns
+                DomainResult.Failure(RuntimeException("db locked"))
+            val viewModel = QuoteDetailViewModel(getQuoteDetailUseCase, toggleFavoriteUseCase)
+            val quote = Quote(id = "42", content = "c", author = "a", favorite = true)
+
+            viewModel.effects.test {
+                viewModel.toggleFavorite(quote)
+                val effect = awaitItem()
+                assertTrue(effect is QuoteDetailEffect.ShowError)
+                assertEquals("db locked", (effect as QuoteDetailEffect.ShowError).message)
+                cancelAndIgnoreRemainingEvents()
+            }
         }
 }

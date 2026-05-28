@@ -1,39 +1,39 @@
 package com.quotify.core.domain.usecase
 
+import com.quotify.core.common.DomainResult
 import com.quotify.core.domain.repository.QuoteRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ToggleFavoriteUseCaseTest {
-    private val quoteRepository = mockk<QuoteRepository>(relaxed = true)
+    private val quoteRepository = mockk<QuoteRepository>()
     private val useCase = ToggleFavoriteUseCase(quoteRepository)
 
     @Test
-    fun `invoke forwards quoteId and isFavorite=true to repository unchanged`() =
+    fun `invoke forwards quoteId to repository and returns the result`() =
         runTest {
-            useCase(quoteId = "quote-abc-123", isFavorite = true)
+            coEvery { quoteRepository.toggleFavoriteQuote("42") } returns DomainResult.Success(Unit)
 
-            coVerify(exactly = 1) { quoteRepository.toggleFavoriteQuote("quote-abc-123", true) }
+            val result = useCase("42")
+
+            assertTrue(result is DomainResult.Success)
+            coVerify(exactly = 1) { quoteRepository.toggleFavoriteQuote("42") }
         }
 
     @Test
-    fun `invoke forwards quoteId and isFavorite=false to repository unchanged`() =
+    fun `invoke propagates a Failure from the repository`() =
         runTest {
-            useCase(quoteId = "quote-abc-123", isFavorite = false)
+            val error = RuntimeException("db locked")
+            coEvery { quoteRepository.toggleFavoriteQuote("42") } returns DomainResult.Failure(error)
 
-            coVerify(exactly = 1) { quoteRepository.toggleFavoriteQuote("quote-abc-123", false) }
-        }
+            val result = useCase("42")
 
-    @Test(expected = IllegalStateException::class)
-    fun `invoke propagates exceptions from the repository`() =
-        runTest {
-            coEvery {
-                quoteRepository.toggleFavoriteQuote(any(), any())
-            } throws IllegalStateException("db error")
-
-            useCase(quoteId = "42", isFavorite = true)
+            assertTrue(result is DomainResult.Failure)
+            assertSame(error, (result as DomainResult.Failure).error)
         }
 }

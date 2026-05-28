@@ -55,7 +55,6 @@ dependencies {
     // Android Lifecycle
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.material)
 
     // Jetpack compose
     implementation(platform(libs.androidx.compose.bom))

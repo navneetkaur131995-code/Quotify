@@ -27,6 +27,8 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
+
+        buildConfigField("String", "BASE_URL", "\"https://dummyjson.com/\"")
     }
 
     buildTypes {
@@ -41,13 +43,16 @@ android {
     kotlin {
         jvmToolchain(17)
     }
+    buildFeatures {
+        // Required so com.example.quotify.core.BuildConfig.BASE_URL is generated.
+        buildConfig = true
+    }
 }
 
 dependencies {
     ktlintRuleset(libs.compose.rules.ktlint)
     // Android Lifecycle
     implementation(libs.androidx.core.ktx)
-    implementation(libs.material)
 
     // Kotlin Coroutines
     implementation(libs.kotlin.coroutines)
