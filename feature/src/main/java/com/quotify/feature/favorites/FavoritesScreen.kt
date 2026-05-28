@@ -4,7 +4,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.layout.Box
@@ -28,18 +27,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.quotify.feature.R
 import com.quotify.core.domain.model.Quote
-
-private val FavoritesAnimations =
-    slideInVertically(
-        animationSpec =
-            tween(
-                durationMillis = 500,
-                easing = LinearOutSlowInEasing,
-            ),
-    ) { -500 } + expandVertically() +
-        fadeIn(
-            animationSpec = tween(durationMillis = 500),
-        )
 
 @Composable
 fun FavoritesScreen(
@@ -98,15 +85,27 @@ private fun FavoritesList(
             items = items,
             key = { quote -> quote.id },
         ) { quote ->
+            val index = items.indexOf(quote) // Okay for small list size
+            val favoritesAnimations =
+                slideInVertically(
+                    animationSpec =
+                        tween(
+                            easing = LinearOutSlowInEasing,
+                            delayMillis = (index * 60).coerceAtMost(300), // cap delay so late items don't wait forever
+                        ),
+                    initialOffsetY = { fullHeight -> -fullHeight },
+                ) + fadeIn()
+
             val visibleState =
                 remember(quote.id) {
                     MutableTransitionState(false).apply {
                         targetState = true
                     }
                 }
+
             AnimatedVisibility(
                 visibleState = visibleState,
-                enter = FavoritesAnimations,
+                enter = favoritesAnimations,
             ) {
                 FavoritesListItem(quote = quote) {
                     onFavoriteClick(quote.id)

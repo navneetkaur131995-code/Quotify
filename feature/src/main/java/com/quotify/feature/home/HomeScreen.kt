@@ -104,8 +104,7 @@ private fun QuotesList(
         ) { index ->
             lazyPagingItems[index]?.let { quote ->
                 LazyListItem(
-                    quote = quote.content,
-                    author = quote.author,
+                    quote = quote,
                     onQuoteClick = { onQuoteClick(quote.id) },
                 )
             }
@@ -134,8 +133,7 @@ private fun OfflineBanner(modifier: Modifier = Modifier) {
 
 @Composable
 private fun LazyListItem(
-    quote: String,
-    author: String,
+    quote: Quote,
     onQuoteClick: () -> Unit,
 ) {
     ElevatedCard(
@@ -153,7 +151,7 @@ private fun LazyListItem(
                     .fillMaxWidth()
                     .padding(top = 8.dp, bottom = 4.dp)
                     .padding(horizontal = 8.dp),
-            text = quote,
+            text = quote.content,
             textAlign = TextAlign.Start,
         )
         Text(
@@ -162,7 +160,7 @@ private fun LazyListItem(
                     .fillMaxWidth()
                     .padding(horizontal = 8.dp)
                     .padding(bottom = 4.dp),
-            text = stringResource(R.string.quote_attribution, author),
+            text = stringResource(R.string.quote_attribution, quote.author),
             textAlign = TextAlign.End,
         )
     }

@@ -83,7 +83,7 @@ class MainActivity : ComponentActivity() {
                                 val currentKey = backStack.lastOrNull()
                                 NavigationBarItem(
                                     selected = currentKey is HomeNavKeys.QuoteList,
-                                    onClick = { navigator.resetTo(HomeNavKeys.QuoteList) },
+                                    onClick = { navigator.navigateToTab(HomeNavKeys.QuoteList) },
                                     icon = {
                                         Icon(
                                             painter = painterResource(R.drawable.ic_quotes_home),
@@ -94,7 +94,7 @@ class MainActivity : ComponentActivity() {
                                 )
                                 NavigationBarItem(
                                     selected = currentKey is HomeNavKeys.Favorites,
-                                    onClick = { navigator.navigate(HomeNavKeys.Favorites) },
+                                    onClick = { navigator.navigateToTab(HomeNavKeys.Favorites) },
                                     icon = {
                                         Icon(
                                             painter = painterResource(R.drawable.ic_favorite),

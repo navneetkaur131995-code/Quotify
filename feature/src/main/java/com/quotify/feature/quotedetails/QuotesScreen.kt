@@ -4,15 +4,11 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.graphics.res.animatedVectorResource
 import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
 import androidx.compose.animation.graphics.vector.AnimatedImageVector
-import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -48,8 +44,7 @@ fun QuoteDetailScreen(
             }
 
         is QuoteDetailUiState.Success -> {
-            val data = (uiState).quote
-            QuoteDetail(data) { onFavoriteToggle(uiState.quote) }
+            QuoteDetail((uiState).quote) { onFavoriteToggle(uiState.quote) }
         }
 
         is QuoteDetailUiState.Error -> {
@@ -71,10 +66,17 @@ fun QuoteDetail(
                 targetState = true
             }
         }
+
+    val enterTransition =
+        slideInHorizontally(
+            animationSpec = tween(durationMillis = 500, easing = LinearOutSlowInEasing),
+            initialOffsetX = { fullWidth -> -fullWidth },
+        ) +
+            fadeIn(animationSpec = tween(durationMillis = 500))
+
     AnimatedVisibility(
         visibleState = visibleState,
-        enter = QuoteDetailAnimations.enterTransition,
-        exit = QuoteDetailAnimations.exitTransition,
+        enter = enterTransition,
     ) {
         ElevatedCard(
             modifier =
@@ -107,7 +109,7 @@ fun QuoteDetail(
                         MaterialTheme.colorScheme.onSurfaceVariant
                     }
                 IconButton(
-                    onClick = { onFavoriteClick() },
+                    onClick = onFavoriteClick,
                 ) {
                     val image = AnimatedImageVector.animatedVectorResource(R.drawable.avd_favorite)
                     Icon(
@@ -130,21 +132,6 @@ fun QuoteDetail(
     }
 }
 
-private object QuoteDetailAnimations {
-    val enterTransition =
-        slideInHorizontally(
-            animationSpec =
-                tween(
-                    durationMillis = 500,
-                    easing = LinearOutSlowInEasing,
-                ),
-        ) { -500 } + expandHorizontally() +
-            fadeIn(
-                animationSpec = tween(durationMillis = 500),
-            )
-    val exitTransition = slideOutHorizontally() + shrinkHorizontally() + fadeOut()
-}
-
 @Preview
 @Composable
 private fun PreviewQuotesScreen() {
@@ -159,5 +146,6 @@ private fun PreviewQuotesScreen() {
                 ),
             ),
         onFavoriteToggle = {},
+        snackBarMessage = "",
     )
 }
