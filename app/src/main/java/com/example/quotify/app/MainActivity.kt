@@ -20,8 +20,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.rememberNavBackStack
@@ -45,7 +45,7 @@ class MainActivity : ComponentActivity() {
             val backStack =
                 rememberNavBackStack(
                     configuration = QuotifyNavConfiguration,
-                    HomeNavKeys.QuoteList, // start destination
+                    HomeNavKeys.QuoteList,
                 )
             val navigator = remember(backStack) { AppNavigator(backStack) }
 
@@ -55,11 +55,12 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.fillMaxSize(),
                         topBar = {
                             TopAppBar(
-                                title = { Text(text = "Quotify", color = Color.Black) },
+                                title = { Text(text = stringResource(R.string.app_name)) },
                                 colors =
                                     topAppBarColors(
                                         containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                        titleContentColor = MaterialTheme.colorScheme.primary,
+                                        titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                                     ),
                                 navigationIcon = {
                                     val canGoBack = backStack.size > 1
@@ -68,39 +69,39 @@ class MainActivity : ComponentActivity() {
                                             onClick = { navigator.goBack() },
                                             modifier = Modifier.padding(8.dp),
                                         ) {
-                                            Icon(painter = painterResource(R.drawable.ic_back), "Back")
+                                            Icon(
+                                                painter = painterResource(R.drawable.ic_back),
+                                                contentDescription = stringResource(R.string.nav_back),
+                                            )
                                         }
                                     }
                                 },
                             )
                         },
                         bottomBar = {
-                            NavigationBar(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                contentColor = MaterialTheme.colorScheme.primary,
-                            ) {
+                            NavigationBar {
                                 val currentKey = backStack.lastOrNull()
                                 NavigationBarItem(
                                     selected = currentKey is HomeNavKeys.QuoteList,
-                                    onClick = { navigator.resetTo(HomeNavKeys.QuoteList) },
+                                    onClick = { navigator.navigateToTab(HomeNavKeys.QuoteList) },
                                     icon = {
                                         Icon(
                                             painter = painterResource(R.drawable.ic_quotes_home),
-                                            contentDescription = "Home",
+                                            contentDescription = stringResource(R.string.nav_home),
                                         )
                                     },
-                                    label = { Text("Home") },
+                                    label = { Text(stringResource(R.string.nav_home)) },
                                 )
                                 NavigationBarItem(
                                     selected = currentKey is HomeNavKeys.Favorites,
-                                    onClick = { navigator.navigate(HomeNavKeys.Favorites) },
+                                    onClick = { navigator.navigateToTab(HomeNavKeys.Favorites) },
                                     icon = {
                                         Icon(
                                             painter = painterResource(R.drawable.ic_favorite),
-                                            contentDescription = "Favorites",
+                                            contentDescription = stringResource(R.string.nav_favorites),
                                         )
                                     },
-                                    label = { Text("Favorites") },
+                                    label = { Text(stringResource(R.string.nav_favorites)) },
                                 )
                             }
                         },
@@ -117,20 +118,26 @@ class MainActivity : ComponentActivity() {
 @Preview
 @Composable
 private fun TopBarPreview() {
-    TopAppBar(
-        title = { Text(text = "Quotify") },
-        colors =
-            topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                titleContentColor = MaterialTheme.colorScheme.primary,
-            ),
-        navigationIcon = {
-            IconButton(
-                onClick = {},
-                modifier = Modifier.padding(16.dp),
-            ) {
-                Icon(painter = painterResource(R.drawable.ic_back), "Back")
-            }
-        },
-    )
+    QuotifyTheme {
+        TopAppBar(
+            title = { Text(text = stringResource(R.string.app_name)) },
+            colors =
+                topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                ),
+            navigationIcon = {
+                IconButton(
+                    onClick = {},
+                    modifier = Modifier.padding(16.dp),
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_back),
+                        contentDescription = stringResource(R.string.nav_back),
+                    )
+                }
+            },
+        )
+    }
 }

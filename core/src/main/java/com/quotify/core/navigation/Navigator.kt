@@ -20,4 +20,7 @@ interface Navigator {
 
     // Replace the entire stack with a single destination (e.g. for tab roots)
     fun resetTo(key: QuotifyNavKey)
+
+    // Switch to a tab: no-op if already there, pop back if in stack, push if absent
+    fun navigateToTab(key: QuotifyNavKey)
 }

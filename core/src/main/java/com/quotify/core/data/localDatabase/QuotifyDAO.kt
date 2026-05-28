@@ -19,10 +19,21 @@ interface QuotifyDAO {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(quotes: List<QuoteEntity>)
 
-    // Wipes the whole table. Called during REFRESH so stale data
-    // doesn't mix with fresh data from the network.
-    @Query("DELETE FROM quotes")
-    suspend fun clearAll()
+    // We need to wipe the whole table. Called during REFRESH
+    // so stale data doesn't mix with fresh data from the network.
+
+    // Wipe only non-favorite rows on REFRESH so user favorites survive.
+    @Query("DELETE FROM quotes WHERE favorite = 0")
+    suspend fun clearNonFavorites()
+
+    // Snapshot of favorite ids taken before insert so we can re-apply after REPLACE.
+    @Query("SELECT id FROM quotes WHERE favorite = 1")
+    suspend fun getFavoriteIds(): List<String>
+
+    // Re-apply favorite=1 for the ids that had it before insertAll(REPLACE) clobbered them.
+    @Query("UPDATE quotes SET favorite = 1 WHERE id IN (:ids)")
+    suspend fun markFavorites(ids: List<String>)
+
 
     @Query("SELECT * FROM quotes WHERE id = :id")
     fun getQuoteById(id: String): Flow<QuoteEntity?>

@@ -37,4 +37,16 @@ class AppNavigator(
         backStack.clear()
         backStack.add(key)
     }
+
+    override fun navigateToTab(key: QuotifyNavKey) {
+        // If already on this tab, no-op
+        if (backStack.lastOrNull() == key) return
+        // If it's already in the stack (e.g. navigated away from it), pop back to it
+        val index = backStack.indexOfLast { it == key }
+        if (index != -1) {
+            while (backStack.size > index + 1) backStack.removeAt(backStack.lastIndex)
+        } else {
+            backStack.add(key)
+        }
+    }
 }
