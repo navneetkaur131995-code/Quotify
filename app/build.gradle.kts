@@ -34,13 +34,19 @@ android {
     }
 
     buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro",
-            )
+        debug {
+            // Side-by-side installation with release builds, and obvious in Play Console.
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
         }
+//        release {
+//            isMinifyEnabled = true
+//            isShrinkResources = true
+//            proguardFiles(
+//                getDefaultProguardFile("proguard-android-optimize.txt"),
+//                "proguard-rules.pro",
+//            )
+//        }
     }
     kotlin {
         jvmToolchain(17)

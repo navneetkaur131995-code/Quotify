@@ -6,27 +6,20 @@ import com.quotify.core.domain.model.Quote
 import kotlinx.coroutines.flow.Flow
 
 interface QuoteRepository {
-    // Returns a Flow of paginated quotes backed by Room.
-    // The Flow emits a new PagingData whenever Room's data changes.
-    // The RemoteMediator keeps Room fresh from the network.
-
-    //    Why Flow<PagingData<Quote>> as it is Paging 3? Yes it is still Android library & not be in domain layer
-    //    But it's the right abstraction level as
-    //    the interface expresses "give me a stream of paged quotes" without dictating how paging works internally.
-    //    A pragmatic tradeoff & a reasonable position for this project size
+    // Paginated stream backed by Room as single source of truth.
+    // The RemoteMediator keeps Room fresh; the UI observes Room only.
+    // PagingData is an Android type, but pragmatic to surface it here at this project size.
     fun getQuotesStream(): Flow<PagingData<Quote>>
 
-    // Reads a single quote from Room by ID.
-    // Returns DomainResult.Success if found, DomainResult.Failure if not cached.
-    // Flow, because we need to continue monitor the 'Favorite Quote' addition/removal
+    // Hot Room-backed stream that re-emits when the row changes (e.g. on favorite toggle).
+    // Emits Success when the row is present; never emits Failure for transient absence.
     fun getSingleQuoteStream(id: String): Flow<DomainResult<Quote>>
 
-    // Set the quote in the database as 'Favorite' or Not based on the current status
-    suspend fun toggleFavoriteQuote(
-        id: String,
-        isFavorite: Boolean,
-    )
+    // Atomic toggle — implementation flips the row's favorite flag in SQL, so callers
+    // don't have to pass the current state and risk read/decide/write races.
+    suspend fun toggleFavoriteQuote(id: String): DomainResult<Unit>
 
-    // Get a list of Favorites from the database
-    suspend fun getFavoriteQuotes(): DomainResult<List<Quote>>
+    // Reactive list of favorites so the favorites screen updates automatically when a
+    // favorite is toggled from anywhere in the app.
+    fun observeFavoriteQuotes(): Flow<List<Quote>>
 }

@@ -8,74 +8,63 @@ import androidx.room.withTransaction
 import com.quotify.core.data.localDatabase.QuoteEntity
 import com.quotify.core.data.localDatabase.QuotifyDatabase
 import com.quotify.core.data.mapper.toEntity
-import com.quotify.core.data.network.APIService
+import com.quotify.core.data.network.ApiService
 import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
 
 @OptIn(ExperimentalPagingApi::class)
 class QuoteRemoteMediator
-@Inject
-constructor(
-    private val api: APIService,
-    private val database: QuotifyDatabase,
-) : RemoteMediator<Int, QuoteEntity>() {
-    override suspend fun load(
-        loadType: LoadType,
-        state: PagingState<Int, QuoteEntity>,
-    ): MediatorResult {
-        return try {
-            // Calculate how many items to skip
-            val skip =
-                when (loadType) {
-                    LoadType.REFRESH -> 0 // Start from the beginning
+    @Inject
+    constructor(
+        private val api: ApiService,
+        private val database: QuotifyDatabase,
+    ) : RemoteMediator<Int, QuoteEntity>() {
+        override suspend fun load(
+            loadType: LoadType,
+            state: PagingState<Int, QuoteEntity>,
+        ): MediatorResult {
+            return try {
+                val skip =
+                    when (loadType) {
+                        LoadType.REFRESH -> 0
 
-                    LoadType.PREPEND ->
-                        // This API doesn't support loading items before the first one.
-                        // So return success immediately so Paging stops trying.
-                        return MediatorResult.Success(endOfPaginationReached = true)
+                        LoadType.PREPEND ->
+                            // API doesn't support loading items before the first one.
+                            return MediatorResult.Success(endOfPaginationReached = true)
 
-                    LoadType.APPEND -> {
-                        // FIXED: count total items loaded, not number of pages
-                        // state.pages is a list of loaded pages.
-                        // Each page has a .data list. We sum all their sizes.
-                        // Example: 3 pages × 20 items = skip 60
-                        state.pages.sumOf { it.data.size }
+                        LoadType.APPEND ->
+                            // Count loaded items, not pages — pages can have varying sizes.
+                            state.pages.sumOf { it.data.size }
+                    }
+
+                // Honor Paging's `initialLoadSize` (default 3 × pageSize) to avoid three
+                // round-trips on cold start. APPEND uses the normal pageSize.
+                val limit =
+                    if (loadType == LoadType.REFRESH) state.config.initialLoadSize else state.config.pageSize
+
+                val response = api.getQuotesList(limit = limit, skip = skip)
+                val entities = response.quotes.map { it.toEntity() }
+
+                database.withTransaction {
+                    val dao = database.quotifyDao()
+                    if (loadType == LoadType.REFRESH) {
+                        // Snapshot favorites BEFORE the wipe so the REPLACE on insertAll
+                        // doesn't lose them when ids overlap.
+                        val preserved = dao.getFavoriteIds()
+                        dao.clearNonFavorites()
+                        dao.insertAll(entities)
+                        if (preserved.isNotEmpty()) dao.markFavorites(preserved)
+                    } else {
+                        // APPEND: brand-new ids as favorites aren't at risk
+                        dao.insertAll(entities)
                     }
                 }
 
-            // Fetch from the network
-            val response =
-                api.getQuotesList(
-                    limit = state.config.pageSize,
-                    skip = skip,
-                )
-
-            // Convert network DTOs directly to database entities
-            // API → Entity
-            val entities = response.quotes.map { it.toEntity() }
-
-            // Write to Room atomically.
-            // withTransaction means: if the insert fails halfway through,
-            // the clearAll() is also rolled back. No partial state.
-            database.withTransaction {
-                val dao = database.quotifyDAO()
-                val preservedFavoriteIds = dao.getFavoriteIds()
-
-                if (loadType == LoadType.REFRESH) {
-                    // On refresh, wipe stale data first so old and new
-                    // data never mix in the UI
-                    dao.clearNonFavorites()
-                }
-
-                dao.insertAll(entities) // REPLACE wipes favorite=1 on any overlapping id…
-                if (preservedFavoriteIds.isNotEmpty()) {
-                    dao.markFavorites(preservedFavoriteIds) // …re-apply inside the same transactions.
-                }
+                MediatorResult.Success(endOfPaginationReached = entities.isEmpty())
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                MediatorResult.Error(e)
             }
-
-            // If the API returned 0 items, we've reached the end of the list
-            MediatorResult.Success(endOfPaginationReached = entities.isEmpty())
-        } catch (e: Exception) {
-            MediatorResult.Error(e)
         }
     }
-}

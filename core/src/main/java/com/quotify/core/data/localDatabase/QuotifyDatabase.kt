@@ -5,5 +5,5 @@ import androidx.room.RoomDatabase
 
 @Database(entities = [QuoteEntity::class], version = 1)
 abstract class QuotifyDatabase : RoomDatabase() {
-    abstract fun quotifyDAO(): QuotifyDAO
+    abstract fun quotifyDao(): QuotifyDao
 }

@@ -1,6 +1,5 @@
 package com.quotify.feature.home
 
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -13,14 +12,10 @@ import com.quotify.feature.favorites.FavoritesViewModel
 import com.quotify.feature.quotedetails.QuoteDetailNavKey
 
 /*
-*  Extension function the app's entryProvider DSL calls.
-*  Keeps HomeScreen internal and lets this module own how its keys map to content.
-*
-*  Navigation lives here, not inside HomeScreen.
-*  HomeScreen receives a plain (String) -> Unit lambda — it never imports Navigator
-*  or QuoteDetailNavKey, so it stays independently testable and previewable.
-* */
-
+ * Routing layer: NavKey → screen wiring. Screens themselves never import the Navigator
+ * or other features' NavKeys — they receive plain lambdas, which keeps them previewable
+ * and unit-testable in isolation.
+ */
 fun EntryProviderScope<NavKey>.homeEntries() {
     entry<HomeNavKeys.QuoteList> {
         val viewModel: HomeViewModel = hiltViewModel()
@@ -28,27 +23,22 @@ fun EntryProviderScope<NavKey>.homeEntries() {
         val isOnline by viewModel.isOnline.collectAsStateWithLifecycle()
         val pagingData = viewModel.pagingDataFlow.collectAsLazyPagingItems()
 
-        // Read the navigator here in the entry builder, where composition locals
-        // are available and navigation is an appropriate concern.
         val navigator = LocalNavigator.current
 
         HomeScreen(
             lazyPagingItems = pagingData,
             isOnline = isOnline,
-            // The entry builder owns the routing decision: quoteId → QuoteDetailNavKey.
-            // HomeScreen just calls onQuoteClick(id) — it doesn't know what happens next.
             onQuoteClick = { quoteId -> navigator.navigate(QuoteDetailNavKey(quoteId)) },
         )
     }
 
-    entry<HomeNavKeys.Favorites> { key ->
+    entry<HomeNavKeys.Favorites> {
+        // Favorites are observed reactively in the ViewModel via observeFavoriteQuotes(),
+        // so no manual refresh trigger is needed here.
         val viewModel: FavoritesViewModel = hiltViewModel()
-
-        LaunchedEffect(key) {
-            viewModel.getFavoriteQuotes()
-        }
         val navigator = LocalNavigator.current
-        val uiState = viewModel.uiState.collectAsStateWithLifecycle().value
-        FavoritesScreen(uiState) { navigator.navigate(QuoteDetailNavKey(it)) }
+        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+        FavoritesScreen(uiState) { quoteId -> navigator.navigate(QuoteDetailNavKey(quoteId)) }
     }
 }

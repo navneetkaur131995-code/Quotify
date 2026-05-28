@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
 
@@ -27,10 +28,10 @@ class HomeViewModelTest {
     @Test
     fun `pagingDataFlow subscribes to the use case`() =
         runTest {
-            // cachedIn keeps the upstream alive in viewModelScope, so we can't asSnapshot()
+            // cachedIn keeps the upstream alive in viewModelScope, so we can't asSnapshot
             // it here without leaking a coroutine into the test scope. Verifying delegation
-            // is sufficient — the use case's own snapshot test (GetQuotesUseCaseTest) covers
-            // the data path end-to-end.
+            // is sufficient as the use case's own snapshot test covers the data path
+            // end-to-end.
             every { getQuotesUseCase() } returns flowOf(PagingData.empty())
             every { networkMonitor.isOnline } returns flowOf(false)
 
@@ -40,7 +41,7 @@ class HomeViewModelTest {
         }
 
     @Test
-    fun `isOnline starts with false then reflects monitor`() =
+    fun `isOnline starts null then reflects monitor`() =
         runTest {
             every { getQuotesUseCase() } returns flowOf(PagingData.empty())
             val onlineFlow = MutableStateFlow(false)
@@ -49,7 +50,9 @@ class HomeViewModelTest {
             val viewModel = HomeViewModel(getQuotesUseCase, networkMonitor)
 
             viewModel.isOnline.test {
-                // Initial value as documented in the ViewModel.
+                // null initial value — UI treats this as "no reading yet" and hides the banner.
+                assertNull(awaitItem())
+
                 assertEquals(false, awaitItem())
 
                 onlineFlow.value = true

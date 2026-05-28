@@ -1,14 +1,15 @@
 package com.quotify.feature.favorites
 
 import app.cash.turbine.test
-import com.quotify.core.common.DomainResult
 import com.quotify.core.domain.model.Quote
 import com.quotify.core.domain.usecase.GetFavoriteQuotesUseCase
 import com.quotify.feature.util.MainDispatcherRule
-import io.mockk.coEvery
-import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -25,91 +26,82 @@ class FavoritesViewModelTest {
     @Test
     fun `uiState starts in Loading`() =
         runTest {
+            every { getFavoriteQuotesUseCase() } returns flowOf(emptyList())
+
             val viewModel = FavoritesViewModel(getFavoriteQuotesUseCase)
 
             assertEquals(FavoritesUiState.Loading, viewModel.uiState.value)
         }
 
     @Test
-    fun `getFavoriteQuotes emits Success with the list from the use case`() =
+    fun `uiState emits Success with the list from the use case`() =
         runTest {
             val favorites =
                 listOf(
                     Quote(id = "1", content = "a", author = "x", favorite = true),
                     Quote(id = "2", content = "b", author = "y", favorite = true),
                 )
-            coEvery { getFavoriteQuotesUseCase() } returns DomainResult.Success(favorites)
+            every { getFavoriteQuotesUseCase() } returns flowOf(favorites)
 
             val viewModel = FavoritesViewModel(getFavoriteQuotesUseCase)
 
             viewModel.uiState.test {
-                // Initial Loading from constructor.
                 assertEquals(FavoritesUiState.Loading, awaitItem())
-
-                viewModel.getFavoriteQuotes()
-
-                // Consume the Loading reset that getFavoriteQuotes() sets synchronously
-                assertEquals(FavoritesUiState.Loading, awaitItem())
-
-                // getFavoriteQuotes() sets Loading synchronously, but StateFlow deduplicates
-                // equal consecutive values — since we're already in Loading, no new emission fires.
-                // The next distinct emission is Success.
                 assertEquals(FavoritesUiState.Success(favorites), awaitItem())
                 cancelAndIgnoreRemainingEvents()
             }
-            coVerify(exactly = 1) { getFavoriteQuotesUseCase() }
         }
 
     @Test
-    fun `getFavoriteQuotes emits Error with message from the failure`() =
+    fun `uiState emits Success with empty list when use case has no favorites`() =
         runTest {
-            coEvery { getFavoriteQuotesUseCase() } returns DomainResult.Failure(Exception("db broken"))
+            every { getFavoriteQuotesUseCase() } returns flowOf(emptyList())
 
             val viewModel = FavoritesViewModel(getFavoriteQuotesUseCase)
-            viewModel.getFavoriteQuotes()
 
-            val state = viewModel.uiState.value
-            assertTrue(state is FavoritesUiState.Error)
-            assertEquals("db broken", (state as FavoritesUiState.Error).message)
+            viewModel.uiState.test {
+                assertEquals(FavoritesUiState.Loading, awaitItem())
+                assertEquals(FavoritesUiState.Success(emptyList()), awaitItem())
+                cancelAndIgnoreRemainingEvents()
+            }
         }
 
     @Test
-    fun `getFavoriteQuotes Error falls back to default when failure has no message`() =
+    fun `uiState emits Error when the upstream flow throws`() =
         runTest {
-            coEvery { getFavoriteQuotesUseCase() } returns DomainResult.Failure(Exception())
+            every { getFavoriteQuotesUseCase() } returns
+                flow {
+                    throw RuntimeException("db broken")
+                }
 
             val viewModel = FavoritesViewModel(getFavoriteQuotesUseCase)
-            viewModel.getFavoriteQuotes()
 
-            val state = viewModel.uiState.value
-            assertTrue(state is FavoritesUiState.Error)
-            assertEquals("An unknown error occurred", (state as FavoritesUiState.Error).message)
+            viewModel.uiState.test {
+                assertEquals(FavoritesUiState.Loading, awaitItem())
+                val state = awaitItem()
+                assertTrue(state is FavoritesUiState.Error)
+                assertEquals("db broken", (state as FavoritesUiState.Error).message)
+                cancelAndIgnoreRemainingEvents()
+            }
         }
 
     @Test
-    fun `getFavoriteQuotes can be called multiple times to refresh`() =
+    fun `uiState reflects later emissions from the use case (e g favorite toggle)`() =
         runTest {
-            coEvery { getFavoriteQuotesUseCase() } returnsMany
-                listOf(
-                    DomainResult.Success(emptyList()),
-                    DomainResult.Success(
-                        listOf(Quote(id = "1", content = "a", author = "x", favorite = true)),
-                    ),
-                )
+            val source = MutableStateFlow<List<Quote>>(emptyList())
+            every { getFavoriteQuotesUseCase() } returns source
 
             val viewModel = FavoritesViewModel(getFavoriteQuotesUseCase)
 
-            viewModel.getFavoriteQuotes()
-            assertEquals(FavoritesUiState.Success(emptyList()), viewModel.uiState.value)
+            viewModel.uiState.test {
+                assertEquals(FavoritesUiState.Loading, awaitItem())
+                assertEquals(FavoritesUiState.Success(emptyList()), awaitItem())
 
-            viewModel.getFavoriteQuotes()
-            assertEquals(
-                FavoritesUiState.Success(
-                    listOf(Quote(id = "1", content = "a", author = "x", favorite = true)),
-                ),
-                viewModel.uiState.value,
-            )
+                val updated = listOf(Quote(id = "1", content = "a", author = "x", favorite = true))
+                source.value = updated
+                assertEquals(FavoritesUiState.Success(updated), awaitItem())
 
-            coVerify(exactly = 2) { getFavoriteQuotesUseCase() }
+                cancelAndIgnoreRemainingEvents()
+            }
         }
 }

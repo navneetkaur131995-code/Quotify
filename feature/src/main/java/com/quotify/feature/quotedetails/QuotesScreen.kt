@@ -20,6 +20,9 @@ import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -35,28 +38,34 @@ import com.quotify.core.domain.model.Quote
 @Composable
 fun QuoteDetailScreen(
     uiState: QuoteDetailUiState,
+    snackbarHostState: SnackbarHostState,
     onFavoriteToggle: (Quote) -> Unit,
 ) {
-    when (uiState) {
-        is QuoteDetailUiState.Loading ->
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
+    Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+    ) { padding ->
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+        ) {
+            when (uiState) {
+                is QuoteDetailUiState.Loading ->
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
 
-        is QuoteDetailUiState.Success -> {
-            QuoteDetail((uiState).quote) { onFavoriteToggle(uiState.quote) }
-        }
+                is QuoteDetailUiState.Success ->
+                    QuoteDetail(uiState.quote) { onFavoriteToggle(uiState.quote) }
 
-        is QuoteDetailUiState.Error -> {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(text = (uiState).message)
+                is QuoteDetailUiState.Error ->
+                    Text(text = uiState.message, modifier = Modifier.align(Alignment.Center))
             }
         }
     }
 }
 
 @Composable
-fun QuoteDetail(
+private fun QuoteDetail(
     data: Quote,
     onFavoriteClick: () -> Unit,
 ) {
@@ -108,9 +117,7 @@ fun QuoteDetail(
                     } else {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     }
-                IconButton(
-                    onClick = onFavoriteClick,
-                ) {
+                IconButton(onClick = onFavoriteClick) {
                     val image = AnimatedImageVector.animatedVectorResource(R.drawable.avd_favorite)
                     Icon(
                         painter = rememberAnimatedVectorPainter(image, data.favorite),
@@ -145,7 +152,7 @@ private fun PreviewQuotesScreen() {
                     favorite = true,
                 ),
             ),
+        snackbarHostState = remember { SnackbarHostState() },
         onFavoriteToggle = {},
-        snackBarMessage = "",
     )
 }

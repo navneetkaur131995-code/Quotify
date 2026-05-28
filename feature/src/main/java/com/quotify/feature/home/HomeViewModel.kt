@@ -18,17 +18,18 @@ class HomeViewModel
         getQuotesUseCase: GetQuotesUseCase,
         networkMonitor: NetworkMonitor,
     ) : ViewModel() {
-        // Define the PagingData Flow
-        // We use 'cachedIn' so the data survives configuration changes (like rotation).
+        // cachedIn keeps PagingData alive across configuration changes (rotation, etc.).
         val pagingDataFlow = getQuotesUseCase().cachedIn(viewModelScope)
 
-        val isOnline: StateFlow<Boolean> =
+        // Nullable so the UI can distinguish "not yet known" from "definitely offline".
+        // This avoids a brief offline-banner flash on cold start: the banner suppresses
+        // until we have a real reading.
+        val isOnline: StateFlow<Boolean?> =
             networkMonitor.isOnline
                 .stateIn(
                     scope = viewModelScope,
                     started = SharingStarted.WhileSubscribed(SUBSCRIPTION_TIMEOUT_MS),
-                    initialValue = false, // banner will flash briefly on startup when online,
-                    // safer than not showing when offline
+                    initialValue = null,
                 )
 
         private companion object {

@@ -4,18 +4,21 @@ import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import com.quotify.core.navigation.Navigator
 import com.quotify.core.navigation.QuotifyNavKey
+import kotlin.reflect.KClass
 
 /*
-* The real Navigator. Wraps the mutable back stack owned by QuotifyNavHost.
-* Intentionally not a @Singleton, it's scoped to the composable that creates it,
-* because the backstack lives in composition.
-*
-* */
-
+ * The real Navigator. Wraps the mutable back stack owned by QuotifyNavHost.
+ * Intentionally not a @Singleton: it's scoped to the composable that creates it,
+ * because the back stack lives in composition.
+ */
 class AppNavigator(
     private val backStack: NavBackStack<NavKey>,
 ) : Navigator {
     override fun navigate(key: QuotifyNavKey) {
+        // Dedupe: a fast double-tap shouldn't push the same destination twice.
+        // Equality is structural here, so it works for both data objects and data classes
+        // with identical args.
+        if (backStack.lastOrNull() == key) return
         backStack.add(key)
     }
 
@@ -27,8 +30,21 @@ class AppNavigator(
         key: QuotifyNavKey,
         inclusive: Boolean,
     ) {
+        // Structural equality: matches a specific instance (e.g. QuoteDetailNavKey("42")).
         val index = backStack.indexOfLast { it == key }
-        if (index == -1) return // key not found, no-op
+        if (index == -1) return
+        val dropFrom = if (inclusive) index else index + 1
+        while (backStack.size > dropFrom) backStack.removeAt(backStack.lastIndex)
+    }
+
+    override fun popUpToRoute(
+        route: KClass<out QuotifyNavKey>,
+        inclusive: Boolean,
+    ) {
+        // Type match: pops back to "the detail screen" regardless of which quoteId it
+        // currently displays.
+        val index = backStack.indexOfLast { route.isInstance(it) }
+        if (index == -1) return
         val dropFrom = if (inclusive) index else index + 1
         while (backStack.size > dropFrom) backStack.removeAt(backStack.lastIndex)
     }
@@ -39,9 +55,7 @@ class AppNavigator(
     }
 
     override fun navigateToTab(key: QuotifyNavKey) {
-        // If already on this tab, no-op
         if (backStack.lastOrNull() == key) return
-        // If it's already in the stack (e.g. navigated away from it), pop back to it
         val index = backStack.indexOfLast { it == key }
         if (index != -1) {
             while (backStack.size > index + 1) backStack.removeAt(backStack.lastIndex)

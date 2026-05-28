@@ -2,14 +2,15 @@ package com.quotify.feature.favorites
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.quotify.core.common.DomainResult
 import com.quotify.core.domain.model.Quote
 import com.quotify.core.domain.usecase.GetFavoriteQuotesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
 sealed interface FavoritesUiState {
@@ -28,23 +29,22 @@ sealed interface FavoritesUiState {
 class FavoritesViewModel
     @Inject
     constructor(
-        private val getFavoriteQuotesUseCase: GetFavoriteQuotesUseCase,
+        getFavoriteQuotesUseCase: GetFavoriteQuotesUseCase,
     ) : ViewModel() {
-        private val _uiState: MutableStateFlow<FavoritesUiState> = MutableStateFlow(FavoritesUiState.Loading)
-        val uiState: StateFlow<FavoritesUiState> = _uiState.asStateFlow()
+        // Reactive: the favorites screen updates automatically whenever a favorite is
+        // toggled elsewhere in the app (no manual refresh function needed).
+        val uiState: StateFlow<FavoritesUiState> =
+            getFavoriteQuotesUseCase()
+                .map<List<Quote>, FavoritesUiState> { FavoritesUiState.Success(it) }
+                .onStart { emit(FavoritesUiState.Loading) }
+                .catch { e -> emit(FavoritesUiState.Error(e.message ?: "Failed to load favorites")) }
+                .stateIn(
+                    scope = viewModelScope,
+                    started = SharingStarted.WhileSubscribed(SUBSCRIPTION_TIMEOUT_MS),
+                    initialValue = FavoritesUiState.Loading,
+                )
 
-        fun getFavoriteQuotes() {
-            _uiState.value = FavoritesUiState.Loading
-            viewModelScope.launch {
-                when (val result = getFavoriteQuotesUseCase()) {
-                    is DomainResult.Success -> {
-                        _uiState.value = FavoritesUiState.Success(result.data)
-                    }
-
-                    is DomainResult.Failure -> {
-                        _uiState.value = FavoritesUiState.Error(result.error.message ?: "An unknown error occurred")
-                    }
-                }
-            }
+        private companion object {
+            const val SUBSCRIPTION_TIMEOUT_MS = 5_000L
         }
     }

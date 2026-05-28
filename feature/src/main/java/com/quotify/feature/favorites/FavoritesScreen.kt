@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
@@ -52,7 +52,7 @@ fun FavoritesScreen(
                 )
             }
 
-        is FavoritesUiState.Error -> {
+        is FavoritesUiState.Error ->
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
@@ -66,7 +66,6 @@ fun FavoritesScreen(
                     textAlign = TextAlign.Center,
                 )
             }
-        }
     }
 }
 
@@ -81,17 +80,16 @@ private fun FavoritesList(
                 .fillMaxSize()
                 .padding(8.dp),
     ) {
-        items(
+        itemsIndexed(
             items = items,
-            key = { quote -> quote.id },
-        ) { quote ->
-            val index = items.indexOf(quote) // Okay for small list size
+            key = { _, quote -> quote.id },
+        ) { index, quote ->
             val favoritesAnimations =
                 slideInVertically(
                     animationSpec =
                         tween(
                             easing = LinearOutSlowInEasing,
-                            delayMillis = (index * 60).coerceAtMost(300), // cap delay so late items don't wait forever
+                            delayMillis = (index * 60).coerceAtMost(300),
                         ),
                     initialOffsetY = { fullHeight -> -fullHeight },
                 ) + fadeIn()

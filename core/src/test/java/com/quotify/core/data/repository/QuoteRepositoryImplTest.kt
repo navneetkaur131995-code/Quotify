@@ -8,7 +8,7 @@ import androidx.paging.testing.asSnapshot
 import app.cash.turbine.test
 import com.quotify.core.common.DomainResult
 import com.quotify.core.data.localDatabase.QuoteEntity
-import com.quotify.core.data.localDatabase.QuotifyDAO
+import com.quotify.core.data.localDatabase.QuotifyDao
 import com.quotify.core.data.paging.QuoteRemoteMediator
 import com.quotify.core.domain.model.Quote
 import io.mockk.coEvery
@@ -18,13 +18,14 @@ import io.mockk.mockk
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 @OptIn(ExperimentalPagingApi::class)
 class QuoteRepositoryImplTest {
     private val remoteMediator = mockk<QuoteRemoteMediator>(relaxed = true)
-    private val dao = mockk<QuotifyDAO>(relaxed = true)
+    private val dao = mockk<QuotifyDao>(relaxed = true)
     private val repository = QuoteRepositoryImpl(remoteMediator, dao)
 
     private val entity =
@@ -103,16 +104,13 @@ class QuoteRepositoryImplTest {
         }
 
     @Test
-    fun `getSingleQuoteStream emits Failure when DAO returns null`() =
+    fun `getSingleQuoteStream filters out null emissions instead of emitting Failure`() =
         runTest {
+            // Null arises transiently during REFRESH (clearNonFavorites window). We
+            // intentionally swallow it so the UI doesn't flash Error → Success.
             every { dao.getQuoteById("missing") } returns flowOf(null)
 
             repository.getSingleQuoteStream("missing").test {
-                val result = awaitItem()
-                assertTrue(result is DomainResult.Failure)
-                assertTrue(
-                    (result as DomainResult.Failure).error.message!!.contains("missing"),
-                )
                 awaitComplete()
             }
         }
@@ -140,72 +138,63 @@ class QuoteRepositoryImplTest {
     // --- toggleFavoriteQuote ---
 
     @Test
-    fun `toggleFavoriteQuote removes from favorites when currently favorited`() =
+    fun `toggleFavoriteQuote delegates to DAO and returns Success`() =
         runTest {
-            repository.toggleFavoriteQuote(id = "1", isFavorite = true)
+            val result = repository.toggleFavoriteQuote(id = "1")
 
-            coVerify(exactly = 1) { dao.removeFromFavorites("1") }
-            coVerify(exactly = 0) { dao.addToFavorites(any()) }
+            assertTrue(result is DomainResult.Success)
+            coVerify(exactly = 1) { dao.toggleFavorite("1") }
         }
 
     @Test
-    fun `toggleFavoriteQuote adds to favorites when not currently favorited`() =
+    fun `toggleFavoriteQuote wraps DAO exception in Failure`() =
         runTest {
-            repository.toggleFavoriteQuote(id = "1", isFavorite = false)
+            val boom = RuntimeException("db locked")
+            coEvery { dao.toggleFavorite("1") } throws boom
 
-            coVerify(exactly = 1) { dao.addToFavorites("1") }
-            coVerify(exactly = 0) { dao.removeFromFavorites(any()) }
+            val result = repository.toggleFavoriteQuote(id = "1")
+
+            assertTrue(result is DomainResult.Failure)
+            assertSame(boom, (result as DomainResult.Failure).error)
         }
 
-    // --- getFavoriteQuotes ---
+    // --- observeFavoriteQuotes ---
 
     @Test
-    fun `getFavoriteQuotes returns Success with mapped domain list`() =
+    fun `observeFavoriteQuotes maps DAO rows to domain Quotes`() =
         runTest {
             val favorites =
                 listOf(
                     entity.copy(id = "1", favorite = true),
                     entity.copy(id = "2", favorite = true),
                 )
-            coEvery { dao.getFavoriteQuotes() } returns favorites
+            every { dao.observeFavoriteQuotes() } returns flowOf(favorites)
 
-            val result = repository.getFavoriteQuotes()
-
-            assertTrue(result is DomainResult.Success)
-            val data = (result as DomainResult.Success).data
-            assertEquals(2, data.size)
-            assertEquals(listOf("1", "2"), data.map { it.id })
-            assertTrue(data.all { it.favorite })
+            repository.observeFavoriteQuotes().test {
+                val result = awaitItem()
+                assertEquals(2, result.size)
+                assertEquals(listOf("1", "2"), result.map { it.id })
+                assertTrue(result.all { it.favorite })
+                awaitComplete()
+            }
         }
 
     @Test
-    fun `getFavoriteQuotes returns Success with empty list when DAO returns empty`() =
+    fun `observeFavoriteQuotes emits empty list when DAO has no favorites`() =
         runTest {
-            coEvery { dao.getFavoriteQuotes() } returns emptyList()
+            every { dao.observeFavoriteQuotes() } returns flowOf(emptyList())
 
-            val result = repository.getFavoriteQuotes()
-
-            assertTrue(result is DomainResult.Success)
-            assertEquals(emptyList<Quote>(), (result as DomainResult.Success).data)
-        }
-
-    @Test
-    fun `getFavoriteQuotes wraps DAO exception in Failure`() =
-        runTest {
-            val boom = RuntimeException("db down")
-            coEvery { dao.getFavoriteQuotes() } throws boom
-
-            val result = repository.getFavoriteQuotes()
-
-            assertTrue(result is DomainResult.Failure)
-            assertEquals(boom, (result as DomainResult.Failure).error)
+            repository.observeFavoriteQuotes().test {
+                assertEquals(emptyList<Quote>(), awaitItem())
+                awaitComplete()
+            }
         }
 }
 
 /**
  * Deterministic PagingSource for repository tests: returns the given data as a single page
- * with no further keys. To use it whenever the DAO's PagingSource needs to be controlled in a
- * unit test as instantiating a real Room PagingSource would require Robolectric + an
+ * with no further keys. Used wherever the DAO's PagingSource needs to be controlled in a
+ * unit test, since instantiating a real Room PagingSource would require Robolectric + an
  * in-memory database.
  */
 private class FakeQuotesPagingSource(
