@@ -27,7 +27,6 @@ Most "Android sample apps" are either a single Activity demonstrating one featur
 - **Structured concurrency is not optional** — `CancellationException` is rethrown explicitly at every catch site.
 - **Side effects vs state are separated** — one-shot events (snackbars) flow through a `Channel`, persistent state through `StateFlow`.
 - **Recomposition scope is minimized** — back-stack reads go through `derivedStateOf`, screens are split so the top bar doesn't recompose on list updates.
-- **The release build actually ships with R8** — keep rules for Gson DTOs, Retrofit, and Room are written down, not assumed.
 
 ---
 
@@ -45,7 +44,6 @@ Most "Android sample apps" are either a single Activity demonstrating one featur
 | Navigation | **Navigation 3** (`androidx.navigation3:*`) | Type-safe `NavKey`s with `kotlinx.serialization` polymorphic registration |
 | Connectivity | `ConnectivityManager` + `callbackFlow` | Tracks a **set** of validated networks so losing Wi-Fi with cellular up doesn't false-report offline |
 | Testing | **JUnit 4 + MockK + Turbine + paging-testing** | `StandardTestDispatcher` via a reusable `MainDispatcherRule` |
-| Build hygiene | **R8 + resource shrinking** in release | Explicit ProGuard keep rules in `app/proguard-rules.pro` and `core/consumer-rules.pro` |
 | Lint | **ktlint 1.5.0 + compose-rules** | 120-char lines, Compose lambda-naming conventions enforced |
 
 ---
@@ -153,7 +151,7 @@ The favorites screen subscribes to `quotifyDao.observeFavoriteQuotes()` (a `Flow
 └── quotedetails/                     # QuoteDetailScreen + VM + entry builder + NavKey
 ```
 
-> **Namespace quirk:** Android `namespace` is `com.example.quotify[.core|.feature]` (historical), but Kotlin packages are `com.quotify.*`. Don't "fix" without coordinating — it affects R8 keep rules and BuildConfig imports.
+> **Namespace quirk:** Android `namespace` is `com.example.quotify[.core|.feature]` (historical), but Kotlin packages are `com.quotify.*`. Don't "fix" without coordinating — it affects BuildConfig imports and generated code.
 
 ---
 
@@ -164,7 +162,7 @@ JDK 17 required (configured via `jvmToolchain(17)`).
 ```bash
 ./gradlew assembleDebug              # Build debug APK
 ./gradlew installDebug               # Install on connected device/emulator
-./gradlew assembleRelease            # Release APK with R8 + resource shrinking
+./gradlew assembleRelease            # Release APK
 
 ./gradlew test                       # All unit tests
 ./gradlew :core:test                 # Just core
@@ -193,22 +191,6 @@ To stop "more is better" creep, these are deliberate scope decisions, not oversi
 
 ---
 
-## Recording the demo GIF
-
-A short script is provided in `docs/record-demo.sh`. It:
-
-1. Records ~30s of the connected device/emulator via `adb shell screenrecord`.
-2. Pulls the `.mp4` to `docs/`.
-3. Converts to an optimized GIF (loops the script if `ffmpeg` is missing, with brew install instructions).
-
-```bash
-docs/record-demo.sh
-```
-
-Output lands at `docs/demo.gif`, which the README references at the top.
-
----
-
 ## License
 
-MIT — see [LICENSE](LICENSE) if/when added.
+MIT — see [LICENSE](LICENSE).

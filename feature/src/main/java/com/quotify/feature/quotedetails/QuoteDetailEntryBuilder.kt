@@ -38,7 +38,7 @@ fun EntryProviderScope<NavKey>.quoteDetailEntries() {
 
         QuoteDetailScreen(
             uiState = uiState,
-            snackbarHostState = snackBarHostState,
+            snackBarHostState = snackBarHostState,
             onFavoriteToggle = viewModel::toggleFavorite,
         )
     }

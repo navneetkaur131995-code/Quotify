@@ -38,11 +38,11 @@ import com.quotify.core.domain.model.Quote
 @Composable
 fun QuoteDetailScreen(
     uiState: QuoteDetailUiState,
-    snackbarHostState: SnackbarHostState,
+    snackBarHostState: SnackbarHostState,
     onFavoriteToggle: (Quote) -> Unit,
 ) {
     Scaffold(
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+        snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
     ) { padding ->
         Box(
             modifier =
@@ -91,7 +91,7 @@ private fun QuoteDetail(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(horizontal = 16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         ) {
@@ -152,7 +152,7 @@ private fun PreviewQuotesScreen() {
                     favorite = true,
                 ),
             ),
-        snackbarHostState = remember { SnackbarHostState() },
+        snackBarHostState = remember { SnackbarHostState() },
         onFavoriteToggle = {},
     )
 }
