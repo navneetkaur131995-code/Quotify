@@ -2,53 +2,38 @@ package com.quotify.feature.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.quotify.core.common.Outcome
-import com.quotify.core.domain.model.Quote
+import androidx.paging.cachedIn
+import com.quotify.core.domain.connectivity.NetworkMonitor
 import com.quotify.core.domain.usecase.GetQuotesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
-
 @HiltViewModel
-class HomeViewModel @Inject constructor(
-    private val getQuotesUseCase: GetQuotesUseCase
-) : ViewModel() {
+class HomeViewModel
+    @Inject
+    constructor(
+        getQuotesUseCase: GetQuotesUseCase,
+        networkMonitor: NetworkMonitor,
+    ) : ViewModel() {
+        // cachedIn keeps PagingData alive across configuration changes (rotation, etc.).
+        val pagingDataFlow = getQuotesUseCase().cachedIn(viewModelScope)
 
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading
+        // Nullable so the UI can distinguish "not yet known" from "definitely offline".
+        // This avoids a brief offline-banner flash on cold start: the banner suppresses
+        // until we have a real reading.
+        val isOnline: StateFlow<Boolean?> =
+            networkMonitor.isOnline
+                .stateIn(
+                    scope = viewModelScope,
+                    started = SharingStarted.WhileSubscribed(SUBSCRIPTION_TIMEOUT_MS),
+                    initialValue = null,
+                )
 
-    private val _quotes: MutableStateFlow<List<Quote>> = MutableStateFlow(emptyList())
-    val quotes: StateFlow<List<Quote>> = _quotes
-
-    private val _errorMessage = MutableStateFlow("")
-    val errorMessage: StateFlow<String> = _errorMessage
-
-    init {
-        getQuotes()
-    }
-
-    private fun getQuotes() {
-        _isLoading.value = true
-        viewModelScope.launch {
-            getQuotesUseCase().collect {
-                when (it) {
-                    is Outcome.Failure -> {
-                        _isLoading.value = false
-                        _errorMessage.value = it.throwable.message.toString()
-                    }
-
-                    is Outcome.Success -> {
-                        _isLoading.value = false
-                        _quotes.value = it.data
-                    }
-
-                    is Outcome.Loading -> _isLoading.value = true
-                }
-            }
+        private companion object {
+            // 5s tolerates rotation/back-stack churn without tearing down the callback.
+            const val SUBSCRIPTION_TIMEOUT_MS = 5_000L
         }
     }
-
-}

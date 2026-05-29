@@ -32,3 +32,6 @@ google-services.json
 
 # Android Profiling
 *.hprof
+
+# Demo recording intermediates (commit docs/demo.gif, not the raw video)
+docs/*.mp4

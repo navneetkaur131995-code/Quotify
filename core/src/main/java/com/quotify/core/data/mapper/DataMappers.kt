@@ -1,21 +1,21 @@
 package com.quotify.core.data.mapper
 
-import com.quotify.core.data.network.model.QuoteAPIResponse
-import com.quotify.core.data.network.model.QuotesListAPIResponse
+import com.quotify.core.data.localDatabase.QuoteEntity
+import com.quotify.core.data.model.QuoteAPIResponse
 import com.quotify.core.domain.model.Quote
-import com.quotify.core.domain.model.QuotesList
 
-fun QuotesListAPIResponse.toDomain(): QuotesList {
-    return QuotesList(
-        results = results.map { it.toDomain() }
-
+fun QuoteAPIResponse.toEntity(): QuoteEntity =
+    QuoteEntity(
+        id = id.toString(),
+        quote = quote,
+        author = author,
     )
-}
 
-fun QuoteAPIResponse.toDomain(): Quote {
-    return Quote(
+// Database Entity → Domain Model
+fun QuoteEntity.toDomain(): Quote =
+    Quote(
         id = id,
-        content = content,
-        author = author
+        content = quote,
+        author = author,
+        favorite = favorite,
     )
-}

@@ -3,6 +3,17 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.ksp)
     alias(libs.plugins.hilt.android)
+    alias(libs.plugins.ktlint)
+}
+
+ktlint {
+    version.set("1.5.0")
+    android.set(true)
+    outputToConsole.set(true)
+    outputColorName.set("RED")
+    reporters {
+        reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.PLAIN)
+    }
 }
 
 android {
@@ -16,6 +27,8 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
+
+        buildConfigField("String", "BASE_URL", "\"https://dummyjson.com/\"")
     }
 
     buildTypes {
@@ -23,26 +36,27 @@ android {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
         }
     }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+    kotlin {
+        jvmToolchain(17)
     }
-    kotlinOptions {
-        jvmTarget = "11"
+    buildFeatures {
+        // Required so com.example.quotify.core.BuildConfig.BASE_URL is generated.
+        buildConfig = true
     }
 }
 
 dependencies {
+    ktlintRuleset(libs.compose.rules.ktlint)
     // Android Lifecycle
     implementation(libs.androidx.core.ktx)
-    implementation(libs.material)
 
     // Kotlin Coroutines
     implementation(libs.kotlin.coroutines)
+    testImplementation(libs.kotlin.coroutines.test)
 
     // Retrofit + OKHttp
     implementation(libs.squareup.retrofit)
@@ -52,6 +66,8 @@ dependencies {
 
     // Room
     implementation(libs.room.runtime)
+    implementation(libs.room.kotlin.extensions)
+    implementation(libs.room.paging3)
     ksp(libs.room.compiler)
     testImplementation(libs.room.testing)
 
@@ -60,7 +76,18 @@ dependencies {
     ksp(libs.android.hilt.compiler)
     ksp(libs.androidx.hilt.compiler)
 
+    // Paging
+    implementation(libs.androidx.compose.paging)
+    implementation(libs.androidx.compose.paging.runtime)
+    testImplementation(libs.androidx.paging.testing)
+
+    // Navigation3
+    implementation(libs.androidx.navigation3.runtime)
+    implementation(libs.androidx.navigation3.ui)
+
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
+    testImplementation(libs.mockk)
+    testImplementation(libs.turbine)
 }
