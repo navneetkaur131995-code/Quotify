@@ -76,13 +76,13 @@ flowchart LR
 
 ```mermaid
 flowchart TB
-    A[DummyJSON API<br/>GET /quotes?limit&skip] --> B[ApiService<br/>Retrofit]
-    B --> C[QuoteRemoteMediator<br/>REFRESH wipes non-favorites<br/>APPEND inserts new pages<br/>Preserves favorite ids across REPLACE]
-    C -->|writes| D[(QuotifyDatabase<br/>Room — SSOT)]
-    D -->|PagingSource| E[QuoteRepositoryImpl<br/>Entity → Quote]
-    E --> F[GetQuotesUseCase]
-    F --> G[HomeViewModel<br/>cachedIn viewModelScope]
-    G -->|LazyPagingItems| H[HomeScreen<br/>PullToRefreshBox]
+    A["DummyJSON API<br/>GET /quotes (limit, skip)"] --> B["ApiService<br/>Retrofit"]
+    B --> C["QuoteRemoteMediator<br/>REFRESH wipes non-favorites<br/>APPEND inserts new pages<br/>Preserves favorite ids across REPLACE"]
+    C -->|writes| D[("QuotifyDatabase<br/>Room — SSOT")]
+    D -->|PagingSource| E["QuoteRepositoryImpl<br/>Entity → Quote"]
+    E --> F["GetQuotesUseCase"]
+    F --> G["HomeViewModel<br/>cachedIn viewModelScope"]
+    G -->|LazyPagingItems| H["HomeScreen<br/>PullToRefreshBox"]
 
     style A fill:#f9f,stroke:#333
     style D fill:#fffbcc,stroke:#333
@@ -101,15 +101,15 @@ flowchart TB
 
 ```mermaid
 flowchart LR
-    K[QuoteDetailNavKey<br/>quoteId] --> L[LaunchedEffect<br/>viewModel.setQuoteId]
-    L --> M[quoteIdFlow<br/>MutableStateFlow String?]
-    M --> N[filterNotNull<br/>flatMapLatest]
-    N --> O[QuotifyDao.getQuoteById<br/>Flow QuoteEntity?]
-    O -->|filterNotNull at repo| P[QuoteDetailUiState<br/>Loading · Success · Error]
-    P --> Q[QuoteDetailScreen]
+    K["QuoteDetailNavKey<br/>quoteId"] --> L["LaunchedEffect<br/>viewModel.setQuoteId"]
+    L --> M["quoteIdFlow<br/>MutableStateFlow String?"]
+    M --> N["filterNotNull<br/>flatMapLatest"]
+    N --> O["QuotifyDao.getQuoteById<br/>Flow QuoteEntity?"]
+    O -->|filterNotNull at repo| P["QuoteDetailUiState<br/>Loading · Success · Error"]
+    P --> Q["QuoteDetailScreen"]
 
-    R[toggleFavorite] -->|Channel| S[QuoteDetailEffect<br/>ShowError]
-    S --> T[SnackbarHost]
+    R["toggleFavorite"] -->|Channel| S["QuoteDetailEffect<br/>ShowError"]
+    S --> T["SnackbarHost"]
 ```
 
 - The detail VM uses **`filterNotNull → flatMapLatest → stateIn`** so re-entering the screen with the same id doesn't restart the Room query, and a new id structurally cancels the previous inner Flow.
