@@ -35,3 +35,6 @@ google-services.json
 
 # Demo recording intermediates (commit docs/demo.gif, not the raw video)
 docs/*.mp4
+
+# VS Code / editor settings
+.vscode/
